@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Preventivo y Ordinario cada 120 días</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 5px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-item label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .info-item input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .guarda-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .guarda-section label {
+            font-weight: bold;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+        }
+
+        .section-title {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #555;
+            color: white;
+            font-weight: bold;
+        }
+
+        td.item-name {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .checkbox-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input[type="checkbox"], input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .neumaticos-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .neumatico-item {
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .neumatico-item h4 {
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .estado-options {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .estado-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .funcionamiento-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 1px;
+            background-color: #333;
+            border: 2px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .func-header, .func-cell {
+            background-color: white;
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .func-header {
+            background-color: #555;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .func-cell.item {
+            justify-content: flex-start;
+            font-weight: 500;
+        }
+
+        .observaciones {
+            margin-top: 20px;
+        }
+
+        .observaciones textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .footer-info {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 5px;
+        }
+
+        .footer-info label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .footer-info input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            background-color: #218838;
+        }
+
+        .km-fecha-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .medida-neumaticos {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .medida-neumaticos label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .dot-marca {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .legend {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 11px;
+        }
+
+        .legend p {
+            margin: 3px 0;
+        }
+
+        .ultima-dist {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            PM PREVENTIVO Y ORDINARIO CADA 120 DÍAS
+        </div>
+
+        <!-- Información General -->
+        <div class="info-grid">
+            <div class="info-item">
+                <label>DOMINIO:</label>
+                <input type="text" name="dominio" placeholder="Ingrese dominio">
+            </div>
+            <div class="info-item">
+                <label>MODELO VEHÍCULO:</label>
+                <input type="text" name="modelo" placeholder="Ingrese modelo">
+            </div>
+            <div class="info-item">
+                <label>KM ACTUAL:</label>
+                <input type="number" name="km_actual" placeholder="Ingrese KM">
+            </div>
+            <div class="info-item">
+                <label>COMBUSTIBLE TIPO:</label>
+                <input type="text" name="combustible" placeholder="Nafta/Diesel/GNC">
+            </div>
+            <div class="info-item">
+                <label>FECHA:</label>
+                <input type="date" name="fecha">
+            </div>
+            <div class="info-item">
+                <label>BASE VEC:</label>
+                <input type="text" name="base_vec" placeholder="Ingrese base">
+            </div>
+            <div class="info-item" style="grid-column: span 2;">
+                <label>*USARIO CONDUCTOR (numérico):</label>
+                <input type="text" name="usuario_conductor" placeholder="Ingrese número de usuario">
+            </div>
+            <div class="info-item" style="grid-column: span 2;">
+                <label>*DIRECCIÓN Guarda Domiciliaria (Calle, altura, localidad, Pcia):</label>
+                <input type="text" name="direccion" placeholder="Ingrese dirección completa">
+            </div>
+            <div class="info-item" style="grid-column: span 2;">
+                <div class="guarda-section">
+                    <label>*GUARDA DOMICILIARIA:</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="guarda" value="si"> SI
+                        </label>
+                        <label>
+                            <input type="radio" name="guarda" value="no"> NO
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KM y Fecha -->
+        <div class="ultima-dist">
+            <div class="info-item">
+                <label>ÚLTIMO SERVICE: KM</label>
+                <input type="number" name="ultimo_service_km" placeholder="KM">
+            </div>
+            <div class="info-item">
+                <label>FECHA REALIZADO:</label>
+                <input type="date" name="ultimo_service_fecha">
+            </div>
+            <div class="info-item">
+                <label>ÚLTIMA DISTRIBUCIÓN: KM</label>
+                <input type="number" name="ultima_distribucion_km" placeholder="KM">
+            </div>
+            <div class="info-item">
+                <label>FECHA REALIZADO:</label>
+                <input type="date" name="ultima_distribucion_fecha">
+            </div>
+        </div>
+
+        <!-- Documentación y Seguridad -->
+        <div class="section-title">DOCUMENTACIÓN - SEGURIDAD</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th>SI</th>
+                    <th>NO</th>
+                    <th>VENCIMIENTO</th>
+                    <th>ITEM</th>
+                    <th>B</th>
+                    <th>M</th>
+                    <th>OBSERV.</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="item-name">CÉDULA VERDE</td>
+                    <td><input type="checkbox" name="cedula_si"></td>
+                    <td><input type="checkbox" name="cedula_no"></td>
+                    <td><input type="date" name="cedula_venc"></td>
+                    <td class="item-name">LUZ GIRO DELANTERA / TRASERA</td>
+                    <td><input type="checkbox" name="luz_giro_del_b"></td>
+                    <td><input type="checkbox" name="luz_giro_del_m"></td>
+                    <td><input type="text" name="luz_giro_del_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">VENCIMIENTO VTV / RTO</td>
+                    <td><input type="checkbox" name="vtv_si"></td>
+                    <td><input type="checkbox" name="vtv_no"></td>
+                    <td><input type="date" name="vtv_venc"></td>
+                    <td class="item-name">BALIZA / GIRO</td>
+                    <td><input type="checkbox" name="baliza_b"></td>
+                    <td><input type="checkbox" name="baliza_m"></td>
+                    <td><input type="text" name="baliza_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">MATAFUEGO 1KG</td>
+                    <td><input type="checkbox" name="matafuego1_si"></td>
+                    <td><input type="checkbox" name="matafuego1_no"></td>
+                    <td><input type="date" name="matafuego1_venc"></td>
+                    <td class="item-name">LUZ BAJA</td>
+                    <td><input type="checkbox" name="luz_baja_b"></td>
+                    <td><input type="checkbox" name="luz_baja_m"></td>
+                    <td><input type="text" name="luz_baja_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">MATAFUEGO 2.5KG</td>
+                    <td><input type="checkbox" name="matafuego2_si"></td>
+                    <td><input type="checkbox" name="matafuego2_no"></td>
+                    <td><input type="date" name="matafuego2_venc"></td>
+                    <td class="item-name">LUZ ALTA</td>
+                    <td><input type="checkbox" name="luz_alta_b"></td>
+                    <td><input type="checkbox" name="luz_alta_m"></td>
+                    <td><input type="text" name="luz_alta_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">BOTIQUIN</td>
+                    <td><input type="checkbox" name="botiquin_si"></td>
+                    <td><input type="checkbox" name="botiquin_no"></td>
+                    <td><input type="text" name="botiquin_venc"></td>
+                    <td class="item-name">ANTINIEBLA</td>
+                    <td><input type="checkbox" name="antiniebla_b"></td>
+                    <td><input type="checkbox" name="antiniebla_m"></td>
+                    <td><input type="text" name="antiniebla_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">SEGURO</td>
+                    <td><input type="checkbox" name="seguro_si"></td>
+                    <td><input type="checkbox" name="seguro_no"></td>
+                    <td><input type="text" name="seguro_venc"></td>
+                    <td class="item-name">LUZ RETROCESO</td>
+                    <td><input type="checkbox" name="luz_retro_b"></td>
+                    <td><input type="checkbox" name="luz_retro_m"></td>
+                    <td><input type="text" name="luz_retro_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">TARJETA COMBUSTIBLE</td>
+                    <td><input type="checkbox" name="tarjeta_si"></td>
+                    <td><input type="checkbox" name="tarjeta_no"></td>
+                    <td><input type="text" name="tarjeta_venc" placeholder="TICKET + CARD"></td>
+                    <td class="item-name">LUZ STOP</td>
+                    <td><input type="checkbox" name="luz_stop_b"></td>
+                    <td><input type="checkbox" name="luz_stop_m"></td>
+                    <td><input type="text" name="luz_stop_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">LLAVE DE RUEDA</td>
+                    <td><input type="checkbox" name="llave_si"></td>
+                    <td><input type="checkbox" name="llave_no"></td>
+                    <td><input type="text" name="llave_venc"></td>
+                    <td class="item-name">LUZ POSICIÓN</td>
+                    <td><input type="checkbox" name="luz_pos_b"></td>
+                    <td><input type="checkbox" name="luz_pos_m"></td>
+                    <td><input type="text" name="luz_pos_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">CRICKEY / GATO</td>
+                    <td><input type="checkbox" name="crickey_si"></td>
+                    <td><input type="checkbox" name="crickey_no"></td>
+                    <td><input type="text" name="crickey_venc"></td>
+                    <td class="item-name" colspan="4">OBSERVACIONES:</td>
+                </tr>
+                <tr>
+                    <td class="item-name">CUARTA DE REMOLQUE</td>
+                    <td><input type="checkbox" name="cuarta_si"></td>
+                    <td><input type="checkbox" name="cuarta_no"></td>
+                    <td><input type="text" name="cuarta_venc"></td>
+                    <td colspan="4" rowspan="5"><textarea name="observaciones_luces" style="width: 100%; height: 100px; border: none; padding: 5px;"></textarea></td>
+                </tr>
+                <tr>
+                    <td class="item-name">BALIZAS</td>
+                    <td><input type="checkbox" name="balizas_si"></td>
+                    <td><input type="checkbox" name="balizas_no"></td>
+                    <td><input type="text" name="balizas_venc"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">CHALECO PATENTE</td>
+                    <td><input type="checkbox" name="chaleco_si"></td>
+                    <td><input type="checkbox" name="chaleco_no"></td>
+                    <td><input type="text" name="chaleco_venc"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">CERTIFICADO HABILITACION TECNICA (SOLO HIDROS)</td>
+                    <td><input type="checkbox" name="cert_si"></td>
+                    <td><input type="checkbox" name="cert_no"></td>
+                    <td><input type="date" name="cert_venc"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Neumáticos -->
+        <div class="section-title">NEUMÁTICOS</div>
+        <div class="medida-neumaticos">
+            <label>MEDIDA (E): 175/65 R14</label>
+            <input type="text" name="medida_neumaticos" placeholder="Ingrese medida">
+        </div>
+        <div class="dot-marca">
+            <div class="info-item">
+                <label>DOT:</label>
+                <input type="text" name="dot" placeholder="DOT">
+            </div>
+            <div class="info-item">
+                <label>MARCA:</label>
+                <input type="text" name="marca" placeholder="Marca">
+            </div>
+            <div class="info-item">
+                <label>mm:</label>
+                <input type="number" name="mm" placeholder="mm">
+            </div>
+        </div>
+
+        <div class="neumaticos-grid">
+            <div class="neumatico-item">
+                <h4>CUBIERTA DERECHA</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="cub_derecha" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="cub_derecha" value="R"> R - Regular</label>
+                    <label><input type="radio" name="cub_derecha" value="M"> M - Malo</label>
+                </div>
+            </div>
+            <div class="neumatico-item">
+                <h4>CUBIERTA IZQUIERDA</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="cub_izquierda" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="cub_izquierda" value="R"> R - Regular</label>
+                    <label><input type="radio" name="cub_izquierda" value="M"> M - Malo</label>
+                </div>
+            </div>
+            <div class="neumatico-item">
+                <h4>TRASERA DERECHA</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="tras_derecha" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="tras_derecha" value="R"> R - Regular</label>
+                    <label><input type="radio" name="tras_derecha" value="M"> M - Malo</label>
+                </div>
+            </div>
+            <div class="neumatico-item">
+                <h4>TRASERA IZQUIERDA</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="tras_izquierda" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="tras_izquierda" value="R"> R - Regular</label>
+                    <label><input type="radio" name="tras_izquierda" value="M"> M - Malo</label>
+                </div>
+            </div>
+            <div class="neumatico-item">
+                <h4>INFERIOR TD</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="inf_td" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="inf_td" value="R"> R - Regular</label>
+                    <label><input type="radio" name="inf_td" value="M"> M - Malo</label>
+                </div>
+            </div>
+            <div class="neumatico-item">
+                <h4>INFERIOR TI</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="inf_ti" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="inf_ti" value="R"> R - Regular</label>
+                    <label><input type="radio" name="inf_ti" value="M"> M - Malo</label>
+                </div>
+            </div>
+            <div class="neumatico-item">
+                <h4>RUEDA DE AUXILIO</h4>
+                <div class="estado-options">
+                    <label><input type="radio" name="auxilio" value="B"> B - Bueno</label>
+                    <label><input type="radio" name="auxilio" value="R"> R - Regular</label>
+                    <label><input type="radio" name="auxilio" value="M"> M - Malo</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <label>OBSERVACIONES:</label>
+            <textarea name="observaciones_neumaticos" style="width: 100%; height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+        </div>
+
+        <!-- Nivel de Líquidos -->
+        <div class="section-title">NIVEL DE LÍQUIDOS</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th>B</th>
+                    <th>M</th>
+                    <th>OBS.</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="item-name">ACEITE MOTOR</td>
+                    <td><input type="checkbox" name="aceite_motor_b"></td>
+                    <td><input type="checkbox" name="aceite_motor_m"></td>
+                    <td><input type="text" name="aceite_motor_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">ACEITE CAJA</td>
+                    <td><input type="checkbox" name="aceite_caja_b"></td>
+                    <td><input type="checkbox" name="aceite_caja_m"></td>
+                    <td><input type="text" name="aceite_caja_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">ACEITE DIFERENCIAL</td>
+                    <td><input type="checkbox" name="aceite_dif_b"></td>
+                    <td><input type="checkbox" name="aceite_dif_m"></td>
+                    <td><input type="text" name="aceite_dif_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">LÍQUIDO FRENOS</td>
+                    <td><input type="checkbox" name="liq_frenos_b"></td>
+                    <td><input type="checkbox" name="liq_frenos_m"></td>
+                    <td><input type="text" name="liq_frenos_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">LÍQUIDO REFRIGERANTE</td>
+                    <td><input type="checkbox" name="liq_refrig_b"></td>
+                    <td><input type="checkbox" name="liq_refrig_m"></td>
+                    <td><input type="text" name="liq_refrig_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">LÍQUIDO HIDRÁULICA</td>
+                    <td><input type="checkbox" name="liq_hidra_b"></td>
+                    <td><input type="checkbox" name="liq_hidra_m"></td>
+                    <td><input type="text" name="liq_hidra_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">LÍQUIDO LIMPIAPARABRISAS</td>
+                    <td><input type="checkbox" name="liq_limpia_b"></td>
+                    <td><input type="checkbox" name="liq_limpia_m"></td>
+                    <td><input type="text" name="liq_limpia_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name">POSEE PERDIDA DE ACEITE / LÍQUIDOS</td>
+                    <td><input type="checkbox" name="perdida_si"></td>
+                    <td><input type="checkbox" name="perdida_no"></td>
+                    <td><input type="text" name="perdida_obs"></td>
+                </tr>
+                <tr>
+                    <td class="item-name" colspan="4">DETALLAR CUÁL:</td>
+                </tr>
+                <tr>
+                    <td colspan="4"><textarea name="perdida_detalle" style="width: 100%; height: 50px; border: none; padding: 5px;"></textarea></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Funcionamiento -->
+        <div class="section-title">FUNCIONAMIENTO</div>
+        <div class="funcionamiento-grid">
+            <div class="func-header">ITEM</div>
+            <div class="func-header">B</div>
+            <div class="func-header">R</div>
+            <div class="func-header">M</div>
+
+            <div class="func-cell item">MOTOR</div>
+            <div class="func-cell"><input type="checkbox" name="motor_b"></div>
+            <div class="func-cell"><input type="checkbox" name="motor_r"></div>
+            <div class="func-cell"><input type="checkbox" name="motor_m"></div>
+
+            <div class="func-cell item">ELECTROVENTILADOR</div>
+            <div class="func-cell"><input type="checkbox" name="electro_b"></div>
+            <div class="func-cell"><input type="checkbox" name="electro_r"></div>
+            <div class="func-cell"><input type="checkbox" name="electro_m"></div>
+
+            <div class="func-cell item">EMBRAGUE</div>
+            <div class="func-cell"><input type="checkbox" name="embrague_b"></div>
+            <div class="func-cell"><input type="checkbox" name="embrague_r"></div>
+            <div class="func-cell"><input type="checkbox" name="embrague_m"></div>
+
+            <div class="func-cell item">TRANSMISIÓN</div>
+            <div class="func-cell"><input type="checkbox" name="trans_b"></div>
+            <div class="func-cell"><input type="checkbox" name="trans_r"></div>
+            <div class="func-cell"><input type="checkbox" name="trans_m"></div>
+
+            <div class="func-cell item">DIRECCIÓN</div>
+            <div class="func-cell"><input type="checkbox" name="dir_b"></div>
+            <div class="func-cell"><input type="checkbox" name="dir_r"></div>
+            <div class="func-cell"><input type="checkbox" name="dir_m"></div>
+
+            <div class="func-cell item">ESCAPE</div>
+            <div class="func-cell"><input type="checkbox" name="escape_b"></div>
+            <div class="func-cell"><input type="checkbox" name="escape_r"></div>
+            <div class="func-cell"><input type="checkbox" name="escape_m"></div>
+
+            <div class="func-cell item">FRENOS</div>
+            <div class="func-cell"><input type="checkbox" name="frenos_b"></div>
+            <div class="func-cell"><input type="checkbox" name="frenos_r"></div>
+            <div class="func-cell"><input type="checkbox" name="frenos_m"></div>
+
+            <div class="func-cell item">FRENO DE MANO</div>
+            <div class="func-cell"><input type="checkbox" name="freno_mano_b"></div>
+            <div class="func-cell"><input type="checkbox" name="freno_mano_r"></div>
+            <div class="func-cell"><input type="checkbox" name="freno_mano_m"></div>
+
+            <div class="func-cell item">AMORTIGUADORES</div>
+            <div class="func-cell"><input type="checkbox" name="amort_b"></div>
+            <div class="func-cell"><input type="checkbox" name="amort_r"></div>
+            <div class="func-cell"><input type="checkbox" name="amort_m"></div>
+
+            <div class="func-cell item">TREN DELANTERO</div>
+            <div class="func-cell"><input type="checkbox" name="tren_del_b"></div>
+            <div class="func-cell"><input type="checkbox" name="tren_del_r"></div>
+            <div class="func-cell"><input type="checkbox" name="tren_del_m"></div>
+
+            <div class="func-cell item">AIRE ACONDICIONADO</div>
+            <div class="func-cell"><input type="checkbox" name="aire_b"></div>
+            <div class="func-cell"><input type="checkbox" name="aire_r"></div>
+            <div class="func-cell"><input type="checkbox" name="aire_m" style="margin-right: 5px;"> NO POSEE</div>
+
+            <div class="func-cell item">CALEFACCIÓN</div>
+            <div class="func-cell"><input type="checkbox" name="calef_b"></div>
+            <div class="func-cell"><input type="checkbox" name="calef_r"></div>
+            <div class="func-cell"><input type="checkbox" name="calef_m"></div>
+
+            <div class="func-cell item">BATERÍA (MARCA)</div>
+            <div class="func-cell" style="grid-column: span 3;"><input type="text" name="bateria_marca" style="width: 100%;"></div>
+
+            <div class="func-cell item">BATERÍA (FECHA FABRICACIÓN)</div>
+            <div class="func-cell" style="grid-column: span 3;"><input type="text" name="bateria_fecha" style="width: 100%;"></div>
+
+            <div class="func-cell item">BATERÍA (con carga)</div>
+            <div class="func-cell"><input type="checkbox" name="bateria_b"></div>
+            <div class="func-cell"><input type="checkbox" name="bateria_r"></div>
+            <div class="func-cell"><input type="checkbox" name="bateria_m"></div>
+
+            <div class="func-cell item">TABLERO INSTRUMENTAL</div>
+            <div class="func-cell"><input type="checkbox" name="tablero_b"></div>
+            <div class="func-cell"><input type="checkbox" name="tablero_r"></div>
+            <div class="func-cell"><input type="checkbox" name="tablero_m"></div>
+
+            <div class="func-cell item">CERRADURAS</div>
+            <div class="func-cell"><input type="checkbox" name="cerraduras_b"></div>
+            <div class="func-cell"><input type="checkbox" name="cerraduras_r"></div>
+            <div class="func-cell"><input type="checkbox" name="cerraduras_m"></div>
+
+            <div class="func-cell item">VIDRIOS</div>
+            <div class="func-cell"><input type="checkbox" name="vidrios_b"></div>
+            <div class="func-cell"><input type="checkbox" name="vidrios_r"></div>
+            <div class="func-cell"><input type="checkbox" name="vidrios_m"></div>
+
+            <div class="func-cell item">LIMPIA PARABRISAS</div>
+            <div class="func-cell"><input type="checkbox" name="limpia_b"></div>
+            <div class="func-cell"><input type="checkbox" name="limpia_r"></div>
+            <div class="func-cell"><input type="checkbox" name="limpia_m"></div>
+
+            <div class="func-cell item">SAPITO</div>
+            <div class="func-cell"><input type="checkbox" name="sapito_b"></div>
+            <div class="func-cell"><input type="checkbox" name="sapito_r"></div>
+            <div class="func-cell"><input type="checkbox" name="sapito_m"></div>
+
+            <div class="func-cell item">BOCINA</div>
+            <div class="func-cell"><input type="checkbox" name="bocina_b"></div>
+            <div class="func-cell"><input type="checkbox" name="bocina_r"></div>
+            <div class="func-cell"><input type="checkbox" name="bocina_m"></div>
+        </div>
+
+        <div class="legend">
+            <p><strong>B: Bueno</strong></p>
+            <p><strong>R: Regular</strong></p>
+            <p><strong>M: Malo</strong></p>
+        </div>
+
+        <!-- Estado General -->
+        <div class="section-title">ESTADO GENERAL</div>
+        <div class="funcionamiento-grid">
+            <div class="func-header">ITEM</div>
+            <div class="func-header">B</div>
+            <div class="func-header">R</div>
+            <div class="func-header">M</div>
+
+            <div class="func-cell item">LIMPIEZA INTERIOR</div>
+            <div class="func-cell"><input type="checkbox" name="limp_int_b"></div>
+            <div class="func-cell"><input type="checkbox" name="limp_int_r"></div>
+            <div class="func-cell"><input type="checkbox" name="limp_int_m"></div>
+
+            <div class="func-cell item">LIMPIEZA EXTERIOR</div>
+            <div class="func-cell"><input type="checkbox" name="limp_ext_b"></div>
+            <div class="func-cell"><input type="checkbox" name="limp_ext_r"></div>
+            <div class="func-cell"><input type="checkbox" name="limp_ext_m"></div>
+
+            <div class="func-cell item">ÓPTICAS DELANTERAS</div>
+            <div class="func-cell"><input type="checkbox" name="opticas_del_b"></div>
+            <div class="func-cell"><input type="checkbox" name="opticas_del_r"></div>
+            <div class="func-cell"><input type="checkbox" name="opticas_del_m"></div>
+
+            <div class="func-cell item">FAROS TRASEROS</div>
+            <div class="func-cell"><input type="checkbox" name="faros_tras_b"></div>
+            <div class="func-cell"><input type="checkbox" name="faros_tras_r"></div>
+            <div class="func-cell"><input type="checkbox" name="faros_tras_m"></div>
+
+            <div class="func-cell item">ESPEJOS</div>
+            <div class="func-cell"><input type="checkbox" name="espejos_b"></div>
+            <div class="func-cell"><input type="checkbox" name="espejos_r"></div>
+            <div class="func-cell"><input type="checkbox" name="espejos_m"></div>
+
+            <div class="func-cell item">PARABRISAS</div>
+            <div class="func-cell"><input type="checkbox" name="parabrisas_b"></div>
+            <div class="func-cell"><input type="checkbox" name="parabrisas_r"></div>
+            <div class="func-cell"><input type="checkbox" name="parabrisas_m"></div>
+
+            <div class="func-cell item">LUNETA</div>
+            <div class="func-cell"><input type="checkbox" name="luneta_b"></div>
+            <div class="func-cell"><input type="checkbox" name="luneta_r"></div>
+            <div class="func-cell"><input type="checkbox" name="luneta_m"></div>
+
+            <div class="func-cell item">VIDRIOS LATERALES</div>
+            <div class="func-cell"><input type="checkbox" name="vidrios_lat_b"></div>
+            <div class="func-cell"><input type="checkbox" name="vidrios_lat_r"></div>
+            <div class="func-cell"><input type="checkbox" name="vidrios_lat_m"></div>
+
+            <div class="func-cell item">ESTADO PARAGOLPES</div>
+            <div class="func-cell"><input type="checkbox" name="paragolpes_b"></div>
+            <div class="func-cell"><input type="checkbox" name="paragolpes_r"></div>
+            <div class="func-cell"><input type="checkbox" name="paragolpes_m"></div>
+
+            <div class="func-cell item">ESTADO PINTURA</div>
+            <div class="func-cell"><input type="checkbox" name="pintura_b"></div>
+            <div class="func-cell"><input type="checkbox" name="pintura_r"></div>
+            <div class="func-cell"><input type="checkbox" name="pintura_m"></div>
+
+            <div class="func-cell item">PARAGOLPE TRASERO</div>
+            <div class="func-cell"><input type="checkbox" name="parag_tras_b"></div>
+            <div class="func-cell"><input type="checkbox" name="parag_tras_r"></div>
+            <div class="func-cell"><input type="checkbox" name="parag_tras_m"></div>
+
+            <div class="func-cell item">PORTA CAJUELA</div>
+            <div class="func-cell"><input type="checkbox" name="porta_caj_b"></div>
+            <div class="func-cell"><input type="checkbox" name="porta_caj_r"></div>
+            <div class="func-cell"><input type="checkbox" name="porta_caj_m"></div>
+
+            <div class="func-cell item">PORTEZUELA</div>
+            <div class="func-cell"><input type="checkbox" name="portezuela_b"></div>
+            <div class="func-cell"><input type="checkbox" name="portezuela_r"></div>
+            <div class="func-cell"><input type="checkbox" name="portezuela_m"></div>
+
+            <div class="func-cell item">BARIAS REFLECTIVAS</div>
+            <div class="func-cell"><input type="checkbox" name="barias_b"></div>
+            <div class="func-cell"><input type="checkbox" name="barias_r"></div>
+            <div class="func-cell"><input type="checkbox" name="barias_m"></div>
+
+            <div class="func-cell item">FICHA ENGANCHE</div>
+            <div class="func-cell"><input type="checkbox" name="ficha_b"></div>
+            <div class="func-cell"><input type="checkbox" name="ficha_r"></div>
+            <div class="func-cell"><input type="checkbox" name="ficha_m"></div>
+
+            <div class="func-cell item">SEPARADOR DE CARGA</div>
+            <div class="func-cell"><input type="checkbox" name="separador_b"></div>
+            <div class="func-cell"><input type="checkbox" name="separador_r"></div>
+            <div class="func-cell"><input type="checkbox" name="separador_m"></div>
+
+            <div class="func-cell item">TECHO ENGANCHE</div>
+            <div class="func-cell"><input type="checkbox" name="techo_b"></div>
+            <div class="func-cell"><input type="checkbox" name="techo_r"></div>
+            <div class="func-cell"><input type="checkbox" name="techo_m"></div>
+
+            <div class="func-cell item">TAPIZADOS</div>
+            <div class="func-cell"><input type="checkbox" name="tapizados_b"></div>
+            <div class="func-cell"><input type="checkbox" name="tapizados_r"></div>
+            <div class="func-cell"><input type="checkbox" name="tapizados_m"></div>
+
+            <div class="func-cell item">ALFOMBRAS</div>
+            <div class="func-cell"><input type="checkbox" name="alfombras_b"></div>
+            <div class="func-cell"><input type="checkbox" name="alfombras_r"></div>
+            <div class="func-cell"><input type="checkbox" name="alfombras_m"></div>
+
+            <div class="func-cell item">CINTURONES DE SEGURIDAD</div>
+            <div class="func-cell"><input type="checkbox" name="cinturones_b"></div>
+            <div class="func-cell"><input type="checkbox" name="cinturones_r"></div>
+            <div class="func-cell"><input type="checkbox" name="cinturones_m"></div>
+
+            <div class="func-cell item">TIENE EQUIPAMIENTO HIDRÁULICO</div>
+            <div class="func-cell"><input type="checkbox" name="equip_hidra_si"></div>
+            <div class="func-cell" style="grid-column: span 2;"><input type="checkbox" name="equip_hidra_no"> NO</div>
+
+            <div class="func-cell item">ESTADO EQUIPAMIENTO</div>
+            <div class="func-cell"><input type="checkbox" name="estado_equip_b"></div>
+            <div class="func-cell"><input type="checkbox" name="estado_equip_r"></div>
+            <div class="func-cell"><input type="checkbox" name="estado_equip_m"></div>
+
+            <div class="func-cell item">TIENE CUPULA</div>
+            <div class="func-cell"><input type="checkbox" name="cupula_si"></div>
+            <div class="func-cell" style="grid-column: span 2;"><input type="checkbox" name="cupula_no"> NO</div>
+
+            <div class="func-cell item">ESTADO CUPULA</div>
+            <div class="func-cell"><input type="checkbox" name="estado_cupula_b"></div>
+            <div class="func-cell"><input type="checkbox" name="estado_cupula_r"></div>
+            <div class="func-cell"><input type="checkbox" name="estado_cupula_m"></div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="observaciones">
+            <div class="section-title">OBSERVACIONES:</div>
+            <textarea name="observaciones_generales"></textarea>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-info">
+            <label>NÚMERO DE TICKET VEC PARA PM PREVENTIVO Y ORDINARIO CADA 120 DÍAS:</label>
+            <input type="text" name="ticket_vec" placeholder="Ingrese número de ticket">
+
+            <label>REALIZADO POR (EMPRESA / NOMBRE Y APELLIDO):</label>
+            <input type="text" name="realizado_por" placeholder="Ingrese empresa y nombre completo">
+        </div>
+
+        <button class="submit-btn" onclick="submitForm()">GUARDAR FORMULARIO</button>
+    </div>
+
+    <script>
+        function submitForm() {
+            // Aquí puedes agregar la lógica para enviar el formulario
+            // Por ejemplo, recopilar todos los datos y enviarlos a un servidor
+            
+            const formData = new FormData();
+            
+            // Recopilar todos los inputs
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    if (input.checked) {
+                        formData.append(input.name, input.value || 'checked');
+                    }
+                } else {
+                    formData.append(input.name, input.value);
+                }
+            });
+
+            // Por ahora solo mostramos un mensaje
+            alert('Formulario guardado exitosamente!\n\nEn producción, aquí se enviarían los datos al servidor.');
+            
+            // Imprimir datos en consola para verificación
+            console.log('Datos del formulario:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+        }
+
+        // Función para imprimir el formulario
+        function printForm() {
+            window.print();
+        }
+
+        // Agregar botón de imprimir
+        document.addEventListener('DOMContentLoaded', function() {
+            const printBtn = document.createElement('button');
+            printBtn.textContent = 'IMPRIMIR FORMULARIO';
+            printBtn.className = 'submit-btn';
+            printBtn.style.backgroundColor = '#007bff';
+            printBtn.style.marginTop = '10px';
+            printBtn.onclick = printForm;
+            document.querySelector('.container').appendChild(printBtn);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { Box, CircularProgress } from "@mui/material";
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { user, loading, isAnalyst } = useAuth();
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user || !isAnalyst) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
