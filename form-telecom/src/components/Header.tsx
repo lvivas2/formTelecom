@@ -5,10 +5,14 @@ import LogoutIcon from "@mui/icons-material/Logout";
 
 interface HeaderProps {
   title?: string;
+  createdAt?: string;
+  updatedAt?: string | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   title = "Panel de Análisis",
+  createdAt,
+  updatedAt,
 }) => {
   const { signOut, user } = useAuth();
 
@@ -23,9 +27,31 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <AppBar position="static" sx={{ mb: 3 }}>
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {title}
-        </Typography>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" component="div">
+            {title}
+          </Typography>
+          {(createdAt || updatedAt) && (
+            <Box sx={{ display: "flex", gap: 2, mt: 0.5 }}>
+              {createdAt && (
+                <Typography
+                  variant="caption"
+                  sx={{ opacity: 0.9, display: { xs: "none", sm: "block" } }}
+                >
+                  Creado: {new Date(createdAt).toLocaleString("es-AR")}
+                </Typography>
+              )}
+              {updatedAt && (
+                <Typography
+                  variant="caption"
+                  sx={{ opacity: 0.9, display: { xs: "none", sm: "block" } }}
+                >
+                  Actualizado: {new Date(updatedAt).toLocaleString("es-AR")}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Box>
         {user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography

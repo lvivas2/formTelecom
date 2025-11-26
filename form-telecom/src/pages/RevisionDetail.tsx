@@ -6,14 +6,15 @@ import {
   Typography,
   Paper,
   Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Alert,
   CircularProgress,
   Divider,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   getRevisionById,
   updateRevision,
@@ -33,6 +34,7 @@ export const RevisionDetail: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState<any>({});
   const [status, setStatus] = useState("");
+  const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -72,22 +74,28 @@ export const RevisionDetail: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!id) return;
+  const handleQuickStatusChange = async (newStatus: string) => {
+    if (!id || saving || status === newStatus) return;
 
     try {
       setSaving(true);
       setError("");
       setSuccess("");
+      setSpeedDialOpen(false);
 
-      const data = await updateRevision(id, formData, status);
+      const data = await updateRevision(id, formData, newStatus);
 
       setRevision(data);
-      setSuccess("Revisión actualizada exitosamente");
+      setStatus(newStatus);
+      setSuccess(
+        `Estado actualizado a: ${
+          STATUSES.find((s) => s.value === newStatus)?.label || newStatus
+        }`
+      );
     } catch (err: unknown) {
-      console.error("Error saving revision:", err);
+      console.error("Error updating status:", err);
       const errorMessage =
-        err instanceof Error ? err.message : "Error al guardar la revisión";
+        err instanceof Error ? err.message : "Error al actualizar el estado";
       setError(errorMessage);
     } finally {
       setSaving(false);
@@ -123,8 +131,12 @@ export const RevisionDetail: React.FC = () => {
 
   return (
     <>
-      <Header title={`Revisión #${revision.id}`} />
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Header
+        title={`Revisión #${revision.id}`}
+        createdAt={revision.created_at}
+        updatedAt={revision.updated_at}
+      />
+      <Box mx={2}>
         <Box
           sx={{
             mb: 3,
@@ -158,7 +170,24 @@ export const RevisionDetail: React.FC = () => {
             mb: 3,
           }}
         >
-          {/* JSON Original - Datos recibidos desde n8n */}
+          {/* Formulario Editable - Izquierda */}
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Formulario Completo (Editable)
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Complete los campos faltantes basándose en los datos originales.
+              Los campos ya completados desde n8n aparecerán prellenados.
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            <FormularioMantenimiento
+              initialData={formData}
+              onDataChange={setFormData}
+              readOnly={false}
+            />
+          </Paper>
+
+          {/* JSON Original - Datos recibidos desde n8n - Derecha */}
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Datos Originales (desde n8n)
@@ -194,74 +223,40 @@ export const RevisionDetail: React.FC = () => {
               )}
             </Box>
           </Paper>
-
-          {/* Estado y Controles */}
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Estado de la Revisión
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Estado</InputLabel>
-              <Select
-                value={status}
-                label="Estado"
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                {STATUSES.map((statusOption) => (
-                  <MenuItem key={statusOption.id} value={statusOption.value}>
-                    {statusOption.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                disabled={saving}
-                fullWidth
-              >
-                {saving ? "Guardando..." : "Guardar Cambios"}
-              </Button>
-            </Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mt: 2, display: "block" }}
-            >
-              Creado: {new Date(revision.created_at).toLocaleString("es-AR")}
-            </Typography>
-            {revision.updated_at && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: "block" }}
-              >
-                Actualizado:{" "}
-                {new Date(revision.updated_at).toLocaleString("es-AR")}
-              </Typography>
-            )}
-          </Paper>
         </Box>
 
-        {/* Formulario Editable */}
-        <Paper elevation={2} sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Formulario Completo (Editable)
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Complete los campos faltantes basándose en los datos originales. Los
-            campos ya completados desde n8n aparecerán prellenados.
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-          <FormularioMantenimiento
-            initialData={formData}
-            onDataChange={setFormData}
-            readOnly={false}
-          />
-        </Paper>
-      </Container>
+        {/* Speed Dial Flotante para cambio rápido de estado */}
+        <SpeedDial
+          ariaLabel="Cambiar estado de revisión"
+          sx={{
+            position: "fixed",
+            bottom: { xs: 16, md: 24 },
+            right: { xs: 16, md: 24 },
+            zIndex: 1000,
+          }}
+          icon={<SpeedDialIcon />}
+          onClose={() => setSpeedDialOpen(false)}
+          onOpen={() => setSpeedDialOpen(true)}
+          open={speedDialOpen}
+        >
+          {status !== "in_review" && (
+            <SpeedDialAction
+              key="in_review"
+              icon={<EditIcon />}
+              tooltipTitle="En Revisión"
+              onClick={() => handleQuickStatusChange("in_review")}
+            />
+          )}
+          {status !== "completed" && (
+            <SpeedDialAction
+              key="completed"
+              icon={<CheckCircleIcon />}
+              tooltipTitle="Completado"
+              onClick={() => handleQuickStatusChange("completed")}
+            />
+          )}
+        </SpeedDial>
+      </Box>
     </>
   );
 };

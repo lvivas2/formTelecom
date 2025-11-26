@@ -31,9 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    // Esperar a que Supabase termine de setear la cookie + token
-    await new Promise((resolve) => setTimeout(resolve, 550));
-
     const userId = currentSession.user.id;
 
     const { data: roleRow, error } = await supabase
@@ -58,8 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsAnalyst(true);
     setLoading(false);
   };
-
-  console.log("user", user);
 
   // Inicializar sesión al montar
   useEffect(() => {

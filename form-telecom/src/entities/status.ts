@@ -56,4 +56,3 @@ export const getStatusLabel = (value: string): string => {
   const status = getStatusByValue(value);
   return status?.label || value;
 };
-

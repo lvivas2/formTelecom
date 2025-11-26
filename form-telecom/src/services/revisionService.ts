@@ -1,0 +1,83 @@
+import { supabase } from "../lib/supabaseClient";
+
+export interface Revision {
+  id: string;
+  status: string;
+  created_at: string;
+}
+
+export interface RevisionDetail {
+  id: string;
+  json_original: any;
+  json_final: any;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+/**
+ * Obtiene la lista de revisiones con estados pending o in_review
+ */
+export const getRevisions = async (): Promise<Revision[]> => {
+  const { data, error } = await supabase
+    .from("form_revision")
+    .select("id, status, created_at")
+    .in("status", ["pending", "in_review"])
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message || "Error al cargar las revisiones");
+  }
+  return data || [];
+};
+
+/**
+ * Obtiene el detalle completo de una revisión por ID
+ */
+export const getRevisionById = async (id: string): Promise<RevisionDetail> => {
+  const { data, error } = await supabase
+    .from("form_revision")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Error al cargar la revisión");
+  }
+
+  if (!data) {
+    throw new Error("Revisión no encontrada");
+  }
+
+  return data;
+};
+
+/**
+ * Actualiza una revisión con json_final y status
+ */
+export const updateRevision = async (
+  id: string,
+  jsonFinal: any,
+  status: string
+): Promise<RevisionDetail> => {
+  const { data, error } = await supabase
+    .from("form_revision")
+    .update({
+      json_final: jsonFinal,
+      status: status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Error al guardar la revisión");
+  }
+
+  if (!data) {
+    throw new Error("Error al actualizar la revisión");
+  }
+
+  return data;
+};
