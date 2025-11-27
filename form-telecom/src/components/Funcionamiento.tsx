@@ -170,9 +170,11 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
   // Helper para actualizar bateria_fecha_fabricacion
   const handleBateriaFechaChange = (fecha: string) => {
     if (!funcionamiento) return;
+    // Si el campo está vacío o solo tiene espacios, establecer como null
+    const fechaValue = fecha.trim();
     handleChange({
       ...funcionamiento,
-      bateria_fecha_fabricacion: fecha || null,
+      bateria_fecha_fabricacion: fechaValue || null,
     });
   };
 

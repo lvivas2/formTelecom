@@ -82,9 +82,13 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             label="FECHA"
             name="fecha"
             value={formatDateForInput(formData?.fecha)}
-            onChange={(e) =>
-              handleChange("fecha", formatDateForStorage(e.target.value))
-            }
+            onChange={(e) => {
+              const fechaValue = e.target.value.trim();
+              handleChange(
+                "fecha",
+                fechaValue ? formatDateForStorage(fechaValue) : null
+              );
+            }}
             InputLabelProps={{ shrink: true }}
           />
         </Box>
@@ -172,9 +176,12 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             onChange={(e) => {
               if (!formData) return;
               const service = formData.ultimo_service || {};
+              const fechaValue = e.target.value.trim();
               handleChange("ultimo_service", {
                 ...service,
-                fecha_realizado: formatDateForStorage(e.target.value),
+                fecha_realizado: fechaValue
+                  ? formatDateForStorage(fechaValue)
+                  : null,
               });
             }}
             InputLabelProps={{ shrink: true }}
@@ -210,9 +217,12 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             onChange={(e) => {
               if (!formData) return;
               const distribucion = formData.ultima_distribucion || {};
+              const fechaValue = e.target.value.trim();
               handleChange("ultima_distribucion", {
                 ...distribucion,
-                fecha_realizado: formatDateForStorage(e.target.value),
+                fecha_realizado: fechaValue
+                  ? formatDateForStorage(fechaValue)
+                  : null,
               });
             }}
             InputLabelProps={{ shrink: true }}

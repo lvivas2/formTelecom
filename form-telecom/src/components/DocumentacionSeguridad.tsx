@@ -132,14 +132,22 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
     const currentValue = documentacionSeguridad[field];
     let vencimientoValue: string | null | undefined = null;
 
-    if (vencimiento) {
-      vencimientoValue = formatDateForStorage(vencimiento);
+    // Si se proporciona un vencimiento (puede ser string vacío)
+    if (vencimiento !== undefined) {
+      // Si el string está vacío o solo tiene espacios, establecer como null
+      if (vencimiento.trim() === "") {
+        vencimientoValue = null;
+      } else {
+        // Si tiene contenido, formatearlo para almacenamiento
+        vencimientoValue = formatDateForStorage(vencimiento);
+      }
     } else if (
       currentValue &&
       typeof currentValue === "object" &&
       currentValue !== null &&
       "vencimiento" in currentValue
     ) {
+      // Si no se proporciona vencimiento, mantener el valor actual
       vencimientoValue = (currentValue as TieneVencimiento).vencimiento || null;
     }
 
