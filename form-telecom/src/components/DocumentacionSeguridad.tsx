@@ -16,6 +16,7 @@ import type {
   DocumentacionSeguridad as DocumentacionSeguridadType,
   TieneVencimiento,
 } from "../entities/form-revision.entity";
+import { useFormHelpers } from "../hooks/useFormHelpers";
 
 interface DocumentacionSeguridadProps {
   documentacionSeguridad: DocumentacionSeguridadType | null;
@@ -26,6 +27,14 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
   documentacionSeguridad: rawDocumentacionSeguridad,
   handleChange,
 }) => {
+  const {
+    formatDateForStorage,
+    normalizeBoolean,
+    normalizeString,
+    getTieneValue,
+    getVencimiento: getVencimientoFromHelper,
+  } = useFormHelpers();
+
   // Normalizar datos: convertir datos antiguos al formato nuevo si es necesario
   const normalizeData = (
     data: DocumentacionSeguridadType | null | Record<string, unknown>
@@ -55,10 +64,7 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
               ? (value as { vencimiento?: unknown }).vencimiento
               : null;
           normalized[field] = {
-            tiene:
-              typeof tieneValue === "boolean"
-                ? tieneValue
-                : tieneValue === "true" || tieneValue === true,
+            tiene: normalizeBoolean(tieneValue),
             vencimiento:
               (typeof vencimientoValue === "string"
                 ? vencimientoValue
@@ -67,10 +73,7 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
         } else if (typeof value === "boolean" || typeof value === "string") {
           // Convertir boolean/string a objeto
           normalized[field] = {
-            tiene:
-              typeof value === "boolean"
-                ? value
-                : value === "true" || value === "si",
+            tiene: normalizeBoolean(value),
             vencimiento: null,
           };
         }
@@ -88,20 +91,13 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
       ];
 
       booleanFields.forEach((field) => {
-        const value = normalized[field];
-        if (typeof value === "string") {
-          normalized[field] = value === "true" || value === "si";
-        } else if (typeof value !== "boolean") {
-          normalized[field] = false;
-        }
+        normalized[field] = normalizeBoolean(normalized[field]);
       });
 
       // Normalizar tarjeta_combustible
-      if (typeof normalized.tarjeta_combustible !== "string") {
-        normalized.tarjeta_combustible = normalized.tarjeta_combustible
-          ? String(normalized.tarjeta_combustible)
-          : "";
-      }
+      normalized.tarjeta_combustible = normalizeString(
+        normalized.tarjeta_combustible
+      );
 
       return normalized as unknown as DocumentacionSeguridadType;
     }
@@ -111,49 +107,18 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
 
   const documentacionSeguridad = normalizeData(rawDocumentacionSeguridad);
 
-  // Helper para convertir fecha de DD-MM-YYYY a YYYY-MM-DD (formato input date)
-  const formatDateForInput = (dateStr: string | null | undefined): string => {
-    if (!dateStr) return "";
-    // Si ya está en formato YYYY-MM-DD, retornarlo
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-    // Si está en formato DD-MM-YYYY, convertirlo
-    const parts = dateStr.split("-");
-    if (parts.length === 3 && parts[0].length === 2) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateStr;
-  };
-
-  // Helper para convertir fecha de YYYY-MM-DD a DD-MM-YYYY (formato almacenado)
-  const formatDateForStorage = (dateStr: string): string => {
-    if (!dateStr) return "";
-    const parts = dateStr.split("-");
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateStr;
-  };
-
   // Helper para obtener valor booleano de campos con TieneVencimiento
   const getTieneVencimientoValue = (
     value: TieneVencimiento | { tiene: boolean } | undefined
   ): boolean => {
-    if (!value) return false;
-    if (typeof value === "object" && "tiene" in value) {
-      return value.tiene;
-    }
-    return false;
+    return getTieneValue(value);
   };
 
   // Helper para obtener fecha de vencimiento
   const getVencimiento = (
     value: TieneVencimiento | { tiene: boolean } | undefined
   ): string => {
-    if (!value || typeof value !== "object") return "";
-    if ("vencimiento" in value && value.vencimiento) {
-      return formatDateForInput(value.vencimiento);
-    }
-    return "";
+    return getVencimientoFromHelper(value);
   };
 
   // Helper para actualizar campos con TieneVencimiento

@@ -1,41 +1,172 @@
 import React from "react";
-import { Checkbox, TextField, Typography, Box, Paper } from "@mui/material";
-import type { FormularioMantenimientoData } from "../entities/formData";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Radio,
+  Typography,
+  Box,
+  TextField,
+  Checkbox,
+} from "@mui/material";
+import type {
+  Funcionamiento as FuncionamientoType,
+  EstadoBRM,
+  EstadoBRM_NP,
+} from "../entities/form-revision.entity";
 
 interface FuncionamientoProps {
-  formData: FormularioMantenimientoData | null;
-  handleChange: (name: string, value: unknown) => void;
+  funcionamiento: FuncionamientoType | null;
+  handleChange: (data: FuncionamientoType) => void;
 }
 
 export const Funcionamiento: React.FC<FuncionamientoProps> = ({
-  formData,
+  funcionamiento: rawFuncionamiento,
   handleChange,
 }) => {
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    handleChange(name, checked);
+  // Normalizar datos si es necesario
+  const normalizeData = (
+    data: FuncionamientoType | null | Record<string, unknown>
+  ): FuncionamientoType | null => {
+    if (!data) return null;
+    if (typeof data === "object" && "motor" in data) {
+      return data as FuncionamientoType;
+    }
+    return null;
   };
 
-  const items = [
-    { name: "motor", label: "MOTOR" },
-    { name: "electro", label: "ELECTROVENTILADOR" },
-    { name: "embrague", label: "EMBRAGUE" },
-    { name: "trans", label: "TRANSMISIÓN" },
-    { name: "dir", label: "DIRECCIÓN" },
-    { name: "escape", label: "ESCAPE" },
-    { name: "frenos", label: "FRENOS" },
-    { name: "freno_mano", label: "FRENO DE MANO" },
-    { name: "amort", label: "AMORTIGUADORES" },
-    { name: "tren_del", label: "TREN DELANTERO" },
-    { name: "aire", label: "AIRE ACONDICIONADO", special: "no_possee" },
-    { name: "calef", label: "CALEFACCIÓN" },
-    { name: "bateria", label: "BATERÍA (con carga)" },
-    { name: "tablero", label: "TABLERO INSTRUMENTAL" },
-    { name: "cerraduras", label: "CERRADURAS" },
-    { name: "vidrios", label: "VIDRIOS" },
-    { name: "limpia", label: "LIMPIA PARABRISAS" },
-    { name: "sapito", label: "SAPITO" },
-    { name: "bocina", label: "BOCINA" },
+  const funcionamiento = normalizeData(rawFuncionamiento);
+
+  if (!funcionamiento) {
+    return null;
+  }
+
+  // Configuración de funcionamiento según la entidad
+  const funcionamientoConfig = [
+    {
+      key: "motor" as const,
+      label: "MOTOR",
+    },
+    {
+      key: "bocina" as const,
+      label: "BOCINA",
+    },
+    {
+      key: "escape" as const,
+      label: "ESCAPE",
+    },
+    {
+      key: "frenos" as const,
+      label: "FRENOS",
+    },
+    {
+      key: "sapito" as const,
+      label: "SAPITO",
+    },
+    {
+      key: "vidrios" as const,
+      label: "VIDRIOS",
+    },
+    {
+      key: "embrague" as const,
+      label: "EMBRAGUE",
+    },
+    {
+      key: "direccion" as const,
+      label: "DIRECCIÓN",
+    },
+    {
+      key: "cerraduras" as const,
+      label: "CERRADURAS",
+    },
+    {
+      key: "calefaccion" as const,
+      label: "CALEFACCIÓN",
+    },
+    {
+      key: "transmision" as const,
+      label: "TRANSMISIÓN",
+    },
+    {
+      key: "freno_de_mano" as const,
+      label: "FRENO DE MANO",
+    },
+    {
+      key: "amortiguadores" as const,
+      label: "AMORTIGUADORES",
+    },
+    {
+      key: "tren_delantero" as const,
+      label: "TREN DELANTERO",
+    },
+    {
+      key: "electroventilador" as const,
+      label: "ELECTROVENTILADOR",
+    },
+    {
+      key: "limpia_parabrisas" as const,
+      label: "LIMPIA PARABRISAS",
+    },
+    {
+      key: "aire_acondicionado" as const,
+      label: "AIRE ACONDICIONADO",
+      special: true, // Puede ser "no posee"
+    },
+    {
+      key: "tablero_instrumental" as const,
+      label: "TABLERO INSTRUMENTAL",
+    },
   ];
+
+  // Helper para actualizar un campo de funcionamiento específico
+  const handleFuncionamientoChange = (
+    key: keyof FuncionamientoType,
+    value: EstadoBRM | EstadoBRM_NP
+  ) => {
+    if (
+      key === "bateria_marca" ||
+      key === "bateria_con_carga" ||
+      key === "bateria_fecha_fabricacion"
+    ) {
+      return;
+    }
+    if (!funcionamiento) return;
+    handleChange({
+      ...funcionamiento,
+      [key]: value,
+    });
+  };
+
+  // Helper para actualizar bateria_marca
+  const handleBateriaMarcaChange = (marca: string) => {
+    if (!funcionamiento) return;
+    handleChange({
+      ...funcionamiento,
+      bateria_marca: marca,
+    });
+  };
+
+  // Helper para actualizar bateria_fecha_fabricacion
+  const handleBateriaFechaChange = (fecha: string) => {
+    if (!funcionamiento) return;
+    handleChange({
+      ...funcionamiento,
+      bateria_fecha_fabricacion: fecha || null,
+    });
+  };
+
+  // Helper para actualizar bateria_con_carga
+  const handleBateriaConCargaChange = (value: boolean) => {
+    if (!funcionamiento) return;
+    handleChange({
+      ...funcionamiento,
+      bateria_con_carga: value,
+    });
+  };
 
   return (
     <Box>
@@ -53,227 +184,200 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
       >
         FUNCIONAMIENTO
       </Typography>
-
-      <Paper elevation={2} sx={{ border: "2px solid #333", mb: 2 }}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(4, 1fr)",
-              sm: "2fr 1fr 1fr 1fr",
-            },
-            gap: 0,
-          }}
-        >
-          <Box
-            sx={{
-              bgcolor: "#555",
-              color: "white",
-              p: 1,
-              fontWeight: "bold",
-              textAlign: "center",
-              borderRight: "1px solid #333",
-              borderBottom: "1px solid #333",
-            }}
-          >
-            ITEM
-          </Box>
-          <Box
-            sx={{
-              bgcolor: "#555",
-              color: "white",
-              p: 1,
-              fontWeight: "bold",
-              textAlign: "center",
-              borderRight: "1px solid #333",
-              borderBottom: "1px solid #333",
-            }}
-          >
-            B
-          </Box>
-          <Box
-            sx={{
-              bgcolor: "#555",
-              color: "white",
-              p: 1,
-              fontWeight: "bold",
-              textAlign: "center",
-              borderRight: "1px solid #333",
-              borderBottom: "1px solid #333",
-            }}
-          >
-            R
-          </Box>
-          <Box
-            sx={{
-              bgcolor: "#555",
-              color: "white",
-              p: 1,
-              fontWeight: "bold",
-              textAlign: "center",
-              borderBottom: "1px solid #333",
-            }}
-          >
-            M
-          </Box>
-
-          {items.map((item, index) => (
-            <React.Fragment key={item.name}>
-              <Box
-                sx={{
-                  p: 1,
-                  fontWeight: 500,
-                  borderRight: "1px solid #333",
-                  borderBottom:
-                    index < items.length - 1 ? "1px solid #333" : "none",
-                  minHeight: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell
+                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
               >
-                {item.label}
-              </Box>
-              <Box
-                sx={{
-                  p: 1,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRight: "1px solid #333",
-                  borderBottom:
-                    index < items.length - 1 ? "1px solid #333" : "none",
-                  minHeight: "48px",
-                }}
+                ITEM
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
               >
+                B - Bueno
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
+              >
+                R - Regular
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
+              >
+                M - Malo
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {funcionamientoConfig.map((config) => {
+              const estado = funcionamiento[config.key] as
+                | EstadoBRM
+                | EstadoBRM_NP;
+              const isAireAcondicionado = config.key === "aire_acondicionado";
+              return (
+                <TableRow key={config.key}>
+                  <TableCell sx={{ fontWeight: 500 }}>{config.label}</TableCell>
+                  <TableCell align="center">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      <Radio
+                        checked={estado === "b"}
+                        onChange={() =>
+                          handleFuncionamientoChange(config.key, "b")
+                        }
+                        value="b"
+                        size="small"
+                      />
+                      {isAireAcondicionado && (
+                        <Typography
+                          variant="caption"
+                          sx={{ fontSize: "0.7rem" }}
+                        >
+                          B - Bueno
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      {isAireAcondicionado ? (
+                        <>
+                          <Radio
+                            checked={estado === "no posee"}
+                            onChange={() =>
+                              handleFuncionamientoChange(
+                                config.key,
+                                "no posee" as EstadoBRM_NP
+                              )
+                            }
+                            value="no posee"
+                            size="small"
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontSize: "0.7rem" }}
+                          >
+                            No Posee
+                          </Typography>
+                        </>
+                      ) : (
+                        <Radio
+                          checked={estado === "r"}
+                          onChange={() =>
+                            handleFuncionamientoChange(config.key, "r")
+                          }
+                          value="r"
+                          size="small"
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      <Radio
+                        checked={estado === "m"}
+                        onChange={() =>
+                          handleFuncionamientoChange(config.key, "m")
+                        }
+                        value="m"
+                        size="small"
+                      />
+                      {isAireAcondicionado && (
+                        <Typography
+                          variant="caption"
+                          sx={{ fontSize: "0.7rem" }}
+                        >
+                          M - Malo
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            <TableRow>
+              <TableCell sx={{ fontWeight: 500 }}>BATERÍA (MARCA)</TableCell>
+              <TableCell colSpan={3}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={funcionamiento.bateria_marca || ""}
+                  onChange={(e) => handleBateriaMarcaChange(e.target.value)}
+                  placeholder="Marca de la batería"
+                />
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 500 }}>
+                BATERÍA (FECHA FABRICACIÓN)
+              </TableCell>
+              <TableCell colSpan={3}>
+                <TextField
+                  type="date"
+                  size="small"
+                  fullWidth
+                  value={funcionamiento.bateria_fecha_fabricacion || ""}
+                  onChange={(e) => handleBateriaFechaChange(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 500 }}>
+                BATERÍA (CON CARGA)
+              </TableCell>
+              <TableCell align="center">
                 <Checkbox
-                  checked={formData[`${item.name}_b`] || false}
+                  checked={funcionamiento.bateria_con_carga}
                   onChange={(e) =>
-                    handleCheckboxChange(`${item.name}_b`, e.target.checked)
+                    handleBateriaConCargaChange(e.target.checked)
                   }
                 />
-              </Box>
-              <Box
-                sx={{
-                  p: 1,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRight: "1px solid #333",
-                  borderBottom:
-                    index < items.length - 1 ? "1px solid #333" : "none",
-                  minHeight: "48px",
-                }}
-              >
+                <Typography variant="caption" sx={{ ml: 0.5 }}>
+                  SI
+                </Typography>
+              </TableCell>
+              <TableCell align="center">
                 <Checkbox
-                  checked={formData[`${item.name}_r`] || false}
+                  checked={!funcionamiento.bateria_con_carga}
                   onChange={(e) =>
-                    handleCheckboxChange(`${item.name}_r`, e.target.checked)
+                    handleBateriaConCargaChange(!e.target.checked)
                   }
                 />
-              </Box>
-              <Box
-                sx={{
-                  p: 1,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderBottom:
-                    index < items.length - 1 ? "1px solid #333" : "none",
-                  minHeight: "48px",
-                }}
-              >
-                <Checkbox
-                  checked={formData[`${item.name}_m`] || false}
-                  onChange={(e) =>
-                    handleCheckboxChange(`${item.name}_m`, e.target.checked)
-                  }
-                />
-                {item.special === "no_possee" && (
-                  <Typography variant="caption" sx={{ ml: 0.5 }}>
-                    NO POSEE
-                  </Typography>
-                )}
-              </Box>
-            </React.Fragment>
-          ))}
-
-          {/* Batería marca y fecha */}
-          <Box
-            sx={{
-              p: 1,
-              fontWeight: 500,
-              borderRight: "1px solid #333",
-              borderBottom: "1px solid #333",
-              minHeight: "48px",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            BATERÍA (MARCA)
-          </Box>
-          <Box
-            sx={{
-              p: 1,
-              borderRight: "1px solid #333",
-              borderBottom: "1px solid #333",
-              minHeight: "48px",
-              gridColumn: "span 3",
-            }}
-          >
-            <TextField
-              fullWidth
-              size="small"
-              name="bateria_marca"
-              value={formData.bateria_marca || ""}
-              onChange={(e) => handleChange("bateria_marca", e.target.value)}
-            />
-          </Box>
-
-          <Box
-            sx={{
-              p: 1,
-              fontWeight: 500,
-              borderRight: "1px solid #333",
-              borderBottom: "1px solid #333",
-              minHeight: "48px",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            BATERÍA (FECHA FABRICACIÓN)
-          </Box>
-          <Box
-            sx={{
-              p: 1,
-              borderBottom: "1px solid #333",
-              minHeight: "48px",
-              gridColumn: "span 3",
-            }}
-          >
-            <TextField
-              fullWidth
-              size="small"
-              name="bateria_fecha"
-              value={formData.bateria_fecha || ""}
-              onChange={(e) => handleChange("bateria_fecha", e.target.value)}
-            />
-          </Box>
-        </Box>
-      </Paper>
-
-      <Box sx={{ mt: 1, p: 1.5, bgcolor: "#f8f9fa", borderRadius: 1 }}>
-        <Typography variant="caption" fontWeight="bold">
-          B: Bueno
-        </Typography>
-        <br />
-        <Typography variant="caption" fontWeight="bold">
-          R: Regular
-        </Typography>
-        <br />
-        <Typography variant="caption" fontWeight="bold">
-          M: Malo
-        </Typography>
-      </Box>
+                <Typography variant="caption" sx={{ ml: 0.5 }}>
+                  NO
+                </Typography>
+              </TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box>
   );
 };

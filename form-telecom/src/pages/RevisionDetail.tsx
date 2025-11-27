@@ -23,6 +23,7 @@ import {
 import { STATUSES } from "../entities/status";
 import { FormularioMantenimiento } from "../components/FormularioMantenimiento";
 import { Header } from "../components/Header";
+import { DatosOriginales } from "../components/DatosOriginales";
 import type { FormularioMantenimientoData } from "../entities/formData";
 
 /**
@@ -254,6 +255,8 @@ export const RevisionDetail: React.FC = () => {
         title={`Revisión #${revision.id}`}
         createdAt={revision.created_at}
         updatedAt={revision.updated_at}
+        onBack={() => navigate("/revisions")}
+        backLabel="Volver a Revisiones"
       />
       <Box
         sx={{
@@ -264,20 +267,6 @@ export const RevisionDetail: React.FC = () => {
           padding: "2rem 2rem 0 2rem",
         }}
       >
-        <Box
-          sx={{
-            mb: 2,
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Button variant="outlined" onClick={() => navigate("/revisions")}>
-            Volver a Revisiones
-          </Button>
-        </Box>
-
         {error && (
           <Alert severity="error" sx={{ mb: 2, flexShrink: 0 }}>
             {error}
@@ -300,52 +289,12 @@ export const RevisionDetail: React.FC = () => {
             overflow: "hidden",
           }}
         >
-          {/* JSON Original - Datos recibidos desde n8n - Izquierda */}
-          <Paper
-            elevation={2}
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              height: "100%",
-            }}
-          >
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Datos Originales (desde n8n)
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Estos son los datos que llegaron automáticamente desde el
-                formulario
-              </Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-            <Box
-              sx={{
-                bgcolor: "#f5f5f5",
-                p: 2,
-                borderRadius: 1,
-                flex: 1,
-                overflow: "auto",
-              }}
-            >
-              {revision.json_original ? (
-                <pre
-                  style={{
-                    margin: 0,
-                    fontSize: "12px",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {JSON.stringify(revision.json_original, null, 2)}
-                </pre>
-              ) : (
-                <Typography color="text.secondary">
-                  No hay datos originales disponibles
-                </Typography>
-              )}
-            </Box>
-          </Paper>
+          {/* Datos Originales - Izquierda */}
+          <DatosOriginales
+            jsonOriginal={revision.json_original}
+            formData={formData}
+            updatedAt={revision.updated_at}
+          />
 
           {/* Formulario Editable - Derecha (más ancho) */}
           <Paper

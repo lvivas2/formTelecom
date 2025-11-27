@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { FormularioMantenimientoData } from "../entities/formData";
+import { useFormHelpers } from "../hooks/useFormHelpers";
 
 interface InformacionGeneralProps {
   formData: FormularioMantenimientoData | null;
@@ -18,6 +19,8 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
   formData,
   handleChange,
 }) => {
+  const { formatDateForInput, formatDateForStorage } = useFormHelpers();
+
   return (
     <Box>
       <Box
@@ -78,8 +81,10 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             type="date"
             label="FECHA"
             name="fecha"
-            value={formData?.fecha || ""}
-            onChange={(e) => handleChange("fecha", e.target.value)}
+            value={formatDateForInput(formData?.fecha)}
+            onChange={(e) =>
+              handleChange("fecha", formatDateForStorage(e.target.value))
+            }
             InputLabelProps={{ shrink: true }}
           />
         </Box>
@@ -161,13 +166,15 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             type="date"
             label="FECHA REALIZADO"
             name="ultimo_service.fecha_realizado"
-            value={formData?.ultimo_service?.fecha_realizado || ""}
+            value={formatDateForInput(
+              formData?.ultimo_service?.fecha_realizado
+            )}
             onChange={(e) => {
               if (!formData) return;
               const service = formData.ultimo_service || {};
               handleChange("ultimo_service", {
                 ...service,
-                fecha_realizado: e.target.value,
+                fecha_realizado: formatDateForStorage(e.target.value),
               });
             }}
             InputLabelProps={{ shrink: true }}
@@ -197,13 +204,15 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             type="date"
             label="FECHA REALIZADO"
             name="ultima_distribucion.fecha_realizado"
-            value={formData?.ultima_distribucion?.fecha_realizado || ""}
+            value={formatDateForInput(
+              formData?.ultima_distribucion?.fecha_realizado
+            )}
             onChange={(e) => {
               if (!formData) return;
               const distribucion = formData.ultima_distribucion || {};
               handleChange("ultima_distribucion", {
                 ...distribucion,
-                fecha_realizado: e.target.value,
+                fecha_realizado: formatDateForStorage(e.target.value),
               });
             }}
             InputLabelProps={{ shrink: true }}

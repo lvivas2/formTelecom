@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   TextField,
   FormControlLabel,
@@ -9,7 +9,11 @@ import {
   Paper,
   TextareaAutosize,
   Checkbox,
+  Collapse,
+  IconButton,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import type {
   Neumaticos as NeumaticosType,
   NeumaticoDetalle,
@@ -86,6 +90,7 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
     ) {
       return;
     }
+    if (!neumaticos) return;
     const currentDetalle = neumaticos[key] as NeumaticoDetalle;
     handleChange({
       ...neumaticos,
@@ -98,6 +103,7 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
 
   // Helper para actualizar medida
   const handleMedidaChange = (medida: string) => {
+    if (!neumaticos) return;
     handleChange({
       ...neumaticos,
       medida,
@@ -106,6 +112,7 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
 
   // Helper para actualizar tuerca_seguridad
   const handleTuercaSeguridadChange = (value: boolean) => {
+    if (!neumaticos) return;
     handleChange({
       ...neumaticos,
       tuerca_seguridad: value,
@@ -114,10 +121,151 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
 
   // Helper para actualizar observaciones
   const handleObservacionesChange = (observaciones: string) => {
+    if (!neumaticos) return;
     handleChange({
       ...neumaticos,
       observaciones: observaciones || null,
     });
+  };
+
+  // Componente interno para cada neumático
+  const NeumaticoCard: React.FC<{
+    config: { key: keyof NeumaticosType; label: string };
+    detalle: NeumaticoDetalle;
+  }> = ({ config, detalle }) => {
+    const hasDotOrMm = !!(detalle?.dot || detalle?.mm);
+    const [showOtherFields, setShowOtherFields] = useState(hasDotOrMm);
+
+    // Actualizar estado cuando hay datos
+    React.useEffect(() => {
+      if (hasDotOrMm) {
+        setShowOtherFields(true);
+      }
+    }, [hasDotOrMm]);
+
+    return (
+      <Paper
+        elevation={2}
+        sx={{
+          p: 2,
+          border: "1px solid #333",
+          borderRadius: 1,
+        }}
+      >
+        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1.5 }}>
+          {config.label}
+        </Typography>
+        <RadioGroup
+          name={config.key}
+          value={detalle?.estado || ""}
+          onChange={(e) =>
+            handleNeumaticoChange(config.key, {
+              estado: e.target.value as EstadoBRM,
+            })
+          }
+        >
+          <FormControlLabel
+            value="b"
+            control={<Radio size="small" />}
+            label="B - Bueno"
+          />
+          <FormControlLabel
+            value="r"
+            control={<Radio size="small" />}
+            label="R - Regular"
+          />
+          <FormControlLabel
+            value="m"
+            control={<Radio size="small" />}
+            label="M - Malo"
+          />
+        </RadioGroup>
+        <Box sx={{ mt: 1.5 }}>
+          <TextField
+            size="small"
+            label="MARCA"
+            value={detalle?.marca || ""}
+            onChange={(e) =>
+              handleNeumaticoChange(config.key, {
+                marca: e.target.value || null,
+              })
+            }
+            placeholder="Marca"
+            fullWidth
+          />
+        </Box>
+        <Box sx={{ mt: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+            }}
+            onClick={() => setShowOtherFields(!showOtherFields)}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+              }}
+            >
+              Otros campos
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOtherFields(!showOtherFields);
+              }}
+              sx={{ p: 0.5 }}
+            >
+              {showOtherFields ? (
+                <ExpandLessIcon fontSize="small" />
+              ) : (
+                <ExpandMoreIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Box>
+          <Collapse in={showOtherFields || hasDotOrMm}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 1,
+                mt: 1,
+              }}
+            >
+              <TextField
+                size="small"
+                label="DOT"
+                value={detalle?.dot || ""}
+                onChange={(e) =>
+                  handleNeumaticoChange(config.key, {
+                    dot: e.target.value || null,
+                  })
+                }
+                placeholder="DOT"
+              />
+              <TextField
+                size="small"
+                type="number"
+                label="mm"
+                value={detalle?.mm || ""}
+                onChange={(e) =>
+                  handleNeumaticoChange(config.key, {
+                    mm: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                placeholder="mm"
+              />
+            </Box>
+          </Collapse>
+        </Box>
+      </Paper>
+    );
   };
 
   return (
@@ -176,91 +324,7 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
           const detalle = neumaticos[config.key] as NeumaticoDetalle;
           return (
             <Box key={config.key}>
-              <Paper
-                elevation={2}
-                sx={{
-                  p: 2,
-                  border: "1px solid #333",
-                  borderRadius: 1,
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  fontWeight="bold"
-                  sx={{ mb: 1.5 }}
-                >
-                  {config.label}
-                </Typography>
-                <RadioGroup
-                  name={config.key}
-                  value={detalle?.estado || ""}
-                  onChange={(e) =>
-                    handleNeumaticoChange(config.key, {
-                      estado: e.target.value as EstadoBRM,
-                    })
-                  }
-                >
-                  <FormControlLabel
-                    value="b"
-                    control={<Radio size="small" />}
-                    label="B - Bueno"
-                  />
-                  <FormControlLabel
-                    value="r"
-                    control={<Radio size="small" />}
-                    label="R - Regular"
-                  />
-                  <FormControlLabel
-                    value="m"
-                    control={<Radio size="small" />}
-                    label="M - Malo"
-                  />
-                </RadioGroup>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 1,
-                    mt: 1.5,
-                  }}
-                >
-                  <TextField
-                    size="small"
-                    label="DOT"
-                    value={detalle?.dot || ""}
-                    onChange={(e) =>
-                      handleNeumaticoChange(config.key, {
-                        dot: e.target.value || null,
-                      })
-                    }
-                    placeholder="DOT"
-                  />
-                  <TextField
-                    size="small"
-                    label="MARCA"
-                    value={detalle?.marca || ""}
-                    onChange={(e) =>
-                      handleNeumaticoChange(config.key, {
-                        marca: e.target.value || null,
-                      })
-                    }
-                    placeholder="Marca"
-                  />
-                  <TextField
-                    size="small"
-                    type="number"
-                    label="mm"
-                    value={detalle?.mm || ""}
-                    onChange={(e) =>
-                      handleNeumaticoChange(config.key, {
-                        mm: e.target.value ? Number(e.target.value) : null,
-                      })
-                    }
-                    placeholder="mm"
-                    sx={{ gridColumn: "span 2" }}
-                  />
-                </Box>
-              </Paper>
+              <NeumaticoCard config={config} detalle={detalle} />
             </Box>
           );
         })}

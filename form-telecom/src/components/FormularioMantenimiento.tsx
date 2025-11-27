@@ -88,16 +88,22 @@ export const FormularioMantenimiento: React.FC<
           handleChange={(neumaticos) => handleChange("neumaticos", neumaticos)}
         />
         <NivelLiquidos
-          formData={formData || null}
-          handleChange={handleChange}
+          nivelLiquidos={(formData?.nivel_de_liquidos as any) || null}
+          handleChange={(nivelLiquidos) =>
+            handleChange("nivel_de_liquidos", nivelLiquidos)
+          }
         />
         <Funcionamiento
-          formData={formData || null}
-          handleChange={handleChange}
+          funcionamiento={(formData?.funcionamiento as any) || null}
+          handleChange={(funcionamiento) =>
+            handleChange("funcionamiento", funcionamiento)
+          }
         />
         <EstadoGeneral
-          formData={formData || null}
-          handleChange={handleChange}
+          estadoGeneral={(formData?.estado_general as any) || null}
+          handleChange={(estadoGeneral) =>
+            handleChange("estado_general", estadoGeneral)
+          }
         />
         <Observaciones
           formData={formData || null}

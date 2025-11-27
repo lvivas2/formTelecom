@@ -7,36 +7,107 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Checkbox,
-  TextField,
+  Radio,
   Typography,
   Box,
   TextareaAutosize,
+  Checkbox,
 } from "@mui/material";
-import type { FormularioMantenimientoData } from "../entities/formData";
+import type {
+  NivelLiquidos as NivelLiquidosType,
+  EstadoBRM,
+} from "../entities/form-revision.entity";
 
 interface NivelLiquidosProps {
-  formData: FormularioMantenimientoData | null;
-  handleChange: (name: string, value: unknown) => void;
+  nivelLiquidos: NivelLiquidosType | null;
+  handleChange: (data: NivelLiquidosType) => void;
 }
 
 export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
-  formData,
+  nivelLiquidos: rawNivelLiquidos,
   handleChange,
 }) => {
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    handleChange(name, checked);
+  // Normalizar datos si es necesario
+  const normalizeData = (
+    data: NivelLiquidosType | null | Record<string, unknown>
+  ): NivelLiquidosType | null => {
+    if (!data) return null;
+    if (typeof data === "object" && "aceite_motor" in data) {
+      return data as NivelLiquidosType;
+    }
+    return null;
   };
 
-  const items = [
-    { name: "aceite_motor", label: "ACEITE MOTOR" },
-    { name: "aceite_caja", label: "ACEITE CAJA" },
-    { name: "aceite_dif", label: "ACEITE DIFERENCIAL" },
-    { name: "liq_frenos", label: "LÍQUIDO FRENOS" },
-    { name: "liq_refrig", label: "LÍQUIDO REFRIGERANTE" },
-    { name: "liq_hidra", label: "LÍQUIDO HIDRÁULICA" },
-    { name: "liq_limpia", label: "LÍQUIDO LIMPIAPARABRISAS" },
+  const nivelLiquidos = normalizeData(rawNivelLiquidos);
+
+  if (!nivelLiquidos) {
+    return null;
+  }
+
+  // Configuración de líquidos según la entidad
+  const liquidosConfig = [
+    {
+      key: "aceite_motor" as const,
+      label: "ACEITE MOTOR",
+    },
+    {
+      key: "aceite_caja" as const,
+      label: "ACEITE CAJA",
+    },
+    {
+      key: "aceite_diferencial" as const,
+      label: "ACEITE DIFERENCIAL",
+    },
+    {
+      key: "liquido_frenos" as const,
+      label: "LÍQUIDO FRENOS",
+    },
+    {
+      key: "liquido_refrigerante" as const,
+      label: "LÍQUIDO REFRIGERANTE",
+    },
+    {
+      key: "liquido_dir_hidraulica" as const,
+      label: "LÍQUIDO DIRECCIÓN HIDRÁULICA",
+    },
+    {
+      key: "liquido_limpiaparabrisas" as const,
+      label: "LÍQUIDO LIMPIAPARABRISAS",
+    },
   ];
+
+  // Helper para actualizar un líquido específico
+  const handleLiquidoChange = (
+    key: keyof NivelLiquidosType,
+    value: EstadoBRM
+  ) => {
+    if (key === "posee_perdida" || key === "detalle_perdida") {
+      return;
+    }
+    if (!nivelLiquidos) return;
+    handleChange({
+      ...nivelLiquidos,
+      [key]: value,
+    });
+  };
+
+  // Helper para actualizar posee_perdida
+  const handlePoseePerdidaChange = (value: boolean) => {
+    if (!nivelLiquidos) return;
+    handleChange({
+      ...nivelLiquidos,
+      posee_perdida: value,
+    });
+  };
+
+  // Helper para actualizar detalle_perdida
+  const handleDetallePerdidaChange = (detalle: string) => {
+    if (!nivelLiquidos) return;
+    handleChange({
+      ...nivelLiquidos,
+      detalle_perdida: detalle || null,
+    });
+  };
 
   return (
     <Box>
@@ -67,91 +138,71 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
                 align="center"
                 sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
               >
-                B
+                B - Bueno
               </TableCell>
               <TableCell
                 align="center"
                 sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
               >
-                M
-              </TableCell>
-              <TableCell
-                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
-              >
-                OBS.
+                M - Malo
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map((item) => (
-              <TableRow key={item.name}>
-                <TableCell sx={{ fontWeight: 500 }}>{item.label}</TableCell>
-                <TableCell align="center">
-                  <Checkbox
-                    checked={formData[`${item.name}_b`] || false}
-                    onChange={(e) =>
-                      handleCheckboxChange(`${item.name}_b`, e.target.checked)
-                    }
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <Checkbox
-                    checked={formData[`${item.name}_m`] || false}
-                    onChange={(e) =>
-                      handleCheckboxChange(`${item.name}_m`, e.target.checked)
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    name={`${item.name}_obs`}
-                    value={formData[`${item.name}_obs`] || ""}
-                    onChange={(e) =>
-                      handleChange(`${item.name}_obs`, e.target.value)
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {liquidosConfig.map((config) => {
+              const estado = nivelLiquidos[config.key] as EstadoBRM;
+              return (
+                <TableRow key={config.key}>
+                  <TableCell sx={{ fontWeight: 500 }}>{config.label}</TableCell>
+                  <TableCell align="center">
+                    <Radio
+                      checked={estado === "b"}
+                      onChange={() => handleLiquidoChange(config.key, "b")}
+                      value="b"
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Radio
+                      checked={estado === "m"}
+                      onChange={() => handleLiquidoChange(config.key, "m")}
+                      value="m"
+                      size="small"
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>
                 POSEE PERDIDA DE ACEITE / LÍQUIDOS
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.perdida_si || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("perdida_si", e.target.checked)
-                  }
+                  checked={nivelLiquidos.posee_perdida}
+                  onChange={(e) => handlePoseePerdidaChange(e.target.checked)}
                 />
+                <Typography variant="caption" sx={{ ml: 0.5 }}>
+                  SI
+                </Typography>
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.perdida_no || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("perdida_no", e.target.checked)
-                  }
+                  checked={!nivelLiquidos.posee_perdida}
+                  onChange={(e) => handlePoseePerdidaChange(!e.target.checked)}
                 />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="perdida_obs"
-                  value={formData.perdida_obs || ""}
-                  onChange={(e) => handleChange("perdida_obs", e.target.value)}
-                />
+                <Typography variant="caption" sx={{ ml: 0.5 }}>
+                  NO
+                </Typography>
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell colSpan={4} sx={{ fontWeight: 500 }}>
+              <TableCell colSpan={3} sx={{ fontWeight: 500 }}>
                 DETALLAR CUÁL:
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell colSpan={4}>
+              <TableCell colSpan={3}>
                 <TextareaAutosize
                   minRows={3}
                   style={{
@@ -160,11 +211,9 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
                     border: "1px solid #ccc",
                     borderRadius: "4px",
                   }}
-                  name="perdida_detalle"
-                  value={formData.perdida_detalle || ""}
-                  onChange={(e) =>
-                    handleChange("perdida_detalle", e.target.value)
-                  }
+                  name="detalle_perdida"
+                  value={nivelLiquidos.detalle_perdida || ""}
+                  onChange={(e) => handleDetallePerdidaChange(e.target.value)}
                 />
               </TableCell>
             </TableRow>

@@ -2,17 +2,22 @@ import React from "react";
 import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface HeaderProps {
   title?: string;
   createdAt?: string;
   updatedAt?: string | null;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   title = "Panel de Análisis",
   createdAt,
   updatedAt,
+  onBack,
+  backLabel = "Volver",
 }) => {
   const { signOut, user } = useAuth();
 
@@ -27,6 +32,16 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <AppBar position="static">
       <Toolbar>
+        {onBack && (
+          <Button
+            color="inherit"
+            onClick={onBack}
+            startIcon={<ArrowBackIcon />}
+            sx={{ textTransform: "none", mr: 2 }}
+          >
+            {backLabel}
+          </Button>
+        )}
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h6" component="div">
             {title}
