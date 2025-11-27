@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import {
   getRevisionById,
-  updateRevision,
+  updateRevisionStatus,
   savePartialRevision,
   type RevisionDetail as RevisionDetailType,
 } from "../services/revisionService";
@@ -238,6 +238,19 @@ export const RevisionDetail: React.FC = () => {
       setLoading(true);
       const data = await getRevisionById(id);
 
+      // Si el estado es pending, cambiarlo automáticamente a in_review
+      if (data.status === "pending") {
+        try {
+          await updateRevisionStatus(id, "in_review");
+          // Actualizar el estado local
+          data.status = "in_review";
+          data.updated_at = new Date().toISOString();
+        } catch (statusError) {
+          console.error("Error al actualizar estado a in_review:", statusError);
+          // Continuar aunque falle el cambio de estado
+        }
+      }
+
       setRevision(data);
       setStatus(data.status || "pending");
 
@@ -268,19 +281,41 @@ export const RevisionDetail: React.FC = () => {
     }
   }, [id, fetchRevision]);
 
-  // Función principal para cambio de estado (no memoizada, se usa internamente)
+  // Función principal para cambio de estado
+  // Usa updateRevisionStatus para cambiar solo el estado sin modificar json_final
   const handleQuickStatusChange = useCallback(
     async (newStatus: string) => {
       if (!id || saving || status === newStatus) return;
+
+      // Validar que el estado sea uno de los permitidos
+      const validStatuses: Array<
+        "pending" | "in_review" | "completed" | "processed"
+      > = ["pending", "in_review", "completed", "processed"];
+      if (!validStatuses.includes(newStatus as any)) {
+        setError(`Estado inválido: ${newStatus}`);
+        return;
+      }
 
       try {
         setSaving(true);
         setError("");
         setSuccess("");
 
-        const data = await updateRevision(id, formData || {}, newStatus);
+        // Usar updateRevisionStatus para cambiar solo el estado
+        await updateRevisionStatus(id, newStatus as any);
 
-        setRevision(data);
+        // Actualizar el estado local y la revisión
+        const updatedRevision = revision
+          ? {
+              ...revision,
+              status: newStatus,
+              updated_at: new Date().toISOString(),
+            }
+          : null;
+
+        if (updatedRevision) {
+          setRevision(updatedRevision);
+        }
         setStatus(newStatus);
         setSuccess(
           `Estado actualizado a: ${
@@ -296,7 +331,7 @@ export const RevisionDetail: React.FC = () => {
         setSaving(false);
       }
     },
-    [id, saving, status, formData]
+    [id, saving, status, revision]
   );
 
   // Callback memoizado para el SpeedDial

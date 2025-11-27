@@ -22,7 +22,7 @@ export const getRevisions = async (): Promise<Revision[]> => {
   const { data, error } = await supabase
     .from("form_revision")
     .select("id, status, created_at")
-    .in("status", ["pending", "in_review"])
+    .in("status", ["pending", "in_review", "completed", "processed"])
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -71,6 +71,27 @@ export const savePartialRevision = async (
 
   if (error) {
     throw new Error(error.message || "Error al guardar cambios parciales");
+  }
+};
+
+/**
+ * Actualiza solo el estado de una revisión
+ * Usado para cambiar el estado sin modificar el json_final
+ */
+export const updateRevisionStatus = async (
+  id: string,
+  status: "pending" | "in_review" | "completed" | "processed"
+): Promise<void> => {
+  const { error } = await supabase
+    .from("form_revision")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message || "Error al actualizar el estado");
   }
 };
 
