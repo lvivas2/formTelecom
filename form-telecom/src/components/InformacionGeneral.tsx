@@ -7,10 +7,11 @@ import {
   Box,
   Typography,
 } from "@mui/material";
+import type { FormularioMantenimientoData } from "../entities/formData";
 
 interface InformacionGeneralProps {
-  formData: any;
-  handleChange: (name: string, value: any) => void;
+  formData: FormularioMantenimientoData | null;
+  handleChange: (name: string, value: unknown) => void;
 }
 
 export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
@@ -35,7 +36,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             label="DOMINIO"
             name="dominio"
-            value={formData.dominio || ""}
+            value={formData?.dominio || ""}
             onChange={(e) => handleChange("dominio", e.target.value)}
             placeholder="Ingrese dominio"
           />
@@ -45,8 +46,8 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             label="MODELO VEHÍCULO"
             name="modelo"
-            value={formData.modelo || ""}
-            onChange={(e) => handleChange("modelo", e.target.value)}
+            value={formData?.modelo_vehiculo || ""}
+            onChange={(e) => handleChange("modelo_vehiculo", e.target.value)}
             placeholder="Ingrese modelo"
           />
         </Box>
@@ -56,7 +57,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             type="number"
             label="KM ACTUAL"
             name="km_actual"
-            value={formData.km_actual || ""}
+            value={formData?.km_actual || ""}
             onChange={(e) => handleChange("km_actual", e.target.value)}
             placeholder="Ingrese KM"
           />
@@ -65,9 +66,9 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
           <TextField
             fullWidth
             label="COMBUSTIBLE TIPO"
-            name="combustible"
-            value={formData.combustible || ""}
-            onChange={(e) => handleChange("combustible", e.target.value)}
+            name="combustible_tipo"
+            value={formData?.combustible_tipo || ""}
+            onChange={(e) => handleChange("combustible_tipo", e.target.value)}
             placeholder="Nafta/Diesel/GNC"
           />
         </Box>
@@ -77,7 +78,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             type="date"
             label="FECHA"
             name="fecha"
-            value={formData.fecha || ""}
+            value={formData?.fecha || ""}
             onChange={(e) => handleChange("fecha", e.target.value)}
             InputLabelProps={{ shrink: true }}
           />
@@ -87,7 +88,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             label="BASE VEC"
             name="base_vec"
-            value={formData.base_vec || ""}
+            value={formData?.base_vec || ""}
             onChange={(e) => handleChange("base_vec", e.target.value)}
             placeholder="Ingrese base"
           />
@@ -97,7 +98,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             label="*USUARIO CONDUCTOR (numérico)"
             name="usuario_conductor"
-            value={formData.usuario_conductor || ""}
+            value={formData?.usuario_conductor || ""}
             onChange={(e) => handleChange("usuario_conductor", e.target.value)}
             placeholder="Ingrese número de usuario"
           />
@@ -107,7 +108,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             label="*DIRECCIÓN Guarda Domiciliaria (Calle, altura, localidad, Pcia)"
             name="direccion"
-            value={formData.direccion || ""}
+            value={formData?.direccion || ""}
             onChange={(e) => handleChange("direccion", e.target.value)}
             placeholder="Ingrese dirección completa"
           />
@@ -118,7 +119,7 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             <RadioGroup
               row
               name="guarda"
-              value={formData.guarda || ""}
+              value={formData?.guarda || ""}
               onChange={(e) => handleChange("guarda", e.target.value)}
             >
               <FormControlLabel value="si" control={<Radio />} label="SI" />
@@ -141,9 +142,16 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             type="number"
             label="ÚLTIMO SERVICE: KM"
-            name="ultimo_service_km"
-            value={formData.ultimo_service_km || ""}
-            onChange={(e) => handleChange("ultimo_service_km", e.target.value)}
+            name="ultimo_service.km"
+            value={formData?.ultimo_service?.km || ""}
+            onChange={(e) => {
+              if (!formData) return;
+              const service = formData.ultimo_service || {};
+              handleChange("ultimo_service", {
+                ...service,
+                km: e.target.value,
+              });
+            }}
             placeholder="KM"
           />
         </Box>
@@ -152,11 +160,16 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             type="date"
             label="FECHA REALIZADO"
-            name="ultimo_service_fecha"
-            value={formData.ultimo_service_fecha || ""}
-            onChange={(e) =>
-              handleChange("ultimo_service_fecha", e.target.value)
-            }
+            name="ultimo_service.fecha_realizado"
+            value={formData?.ultimo_service?.fecha_realizado || ""}
+            onChange={(e) => {
+              if (!formData) return;
+              const service = formData.ultimo_service || {};
+              handleChange("ultimo_service", {
+                ...service,
+                fecha_realizado: e.target.value,
+              });
+            }}
             InputLabelProps={{ shrink: true }}
           />
         </Box>
@@ -165,11 +178,16 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             type="number"
             label="ÚLTIMA DISTRIBUCIÓN: KM"
-            name="ultima_distribucion_km"
-            value={formData.ultima_distribucion_km || ""}
-            onChange={(e) =>
-              handleChange("ultima_distribucion_km", e.target.value)
-            }
+            name="ultima_distribucion.km"
+            value={formData?.ultima_distribucion?.km || ""}
+            onChange={(e) => {
+              if (!formData) return;
+              const distribucion = formData.ultima_distribucion || {};
+              handleChange("ultima_distribucion", {
+                ...distribucion,
+                km: e.target.value,
+              });
+            }}
             placeholder="KM"
           />
         </Box>
@@ -178,11 +196,16 @@ export const InformacionGeneral: React.FC<InformacionGeneralProps> = ({
             fullWidth
             type="date"
             label="FECHA REALIZADO"
-            name="ultima_distribucion_fecha"
-            value={formData.ultima_distribucion_fecha || ""}
-            onChange={(e) =>
-              handleChange("ultima_distribucion_fecha", e.target.value)
-            }
+            name="ultima_distribucion.fecha_realizado"
+            value={formData?.ultima_distribucion?.fecha_realizado || ""}
+            onChange={(e) => {
+              if (!formData) return;
+              const distribucion = formData.ultima_distribucion || {};
+              handleChange("ultima_distribucion", {
+                ...distribucion,
+                fecha_realizado: e.target.value,
+              });
+            }}
             InputLabelProps={{ shrink: true }}
           />
         </Box>

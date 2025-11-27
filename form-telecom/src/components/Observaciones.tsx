@@ -1,9 +1,10 @@
 import React from "react";
 import { Typography, Box, TextareaAutosize } from "@mui/material";
+import type { FormularioMantenimientoData } from "../entities/formData";
 
 interface ObservacionesProps {
-  formData: any;
-  handleChange: (name: string, value: any) => void;
+  formData: FormularioMantenimientoData | null;
+  handleChange: (name: string, value: unknown) => void;
 }
 
 export const Observaciones: React.FC<ObservacionesProps> = ({
@@ -35,13 +36,17 @@ export const Observaciones: React.FC<ObservacionesProps> = ({
           fontFamily: "Arial, sans-serif",
           fontSize: "14px",
         }}
-        name="observaciones_generales"
-        value={formData.observaciones_generales || ""}
-        onChange={(e) =>
-          handleChange("observaciones_generales", e.target.value)
-        }
+        name="observaciones_finales.observaciones"
+        value={formData?.observaciones_finales?.observaciones || ""}
+        onChange={(e) => {
+          if (!formData) return;
+          const obsFinales = formData.observaciones_finales || {};
+          handleChange("observaciones_finales", {
+            ...obsFinales,
+            observaciones: e.target.value,
+          });
+        }}
       />
     </Box>
   );
 };
-

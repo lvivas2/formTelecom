@@ -23,6 +23,122 @@ import {
 import { STATUSES } from "../entities/status";
 import { FormularioMantenimiento } from "../components/FormularioMantenimiento";
 import { Header } from "../components/Header";
+import type { FormularioMantenimientoData } from "../entities/formData";
+
+/**
+ * Extrae y normaliza los datos de fields_ok del json_original
+ * Maneja tanto el formato con fields_ok como el formato directo
+ */
+const extractFieldsOk = (
+  jsonOriginal: unknown
+): FormularioMantenimientoData | null => {
+  if (!jsonOriginal || typeof jsonOriginal !== "object") {
+    return null;
+  }
+
+  const original = jsonOriginal as Record<string, unknown>;
+
+  // Si tiene la estructura con fields_ok, extraerlo
+  if (original.fields_ok && typeof original.fields_ok === "object") {
+    return original.fields_ok as FormularioMantenimientoData;
+  }
+
+  // Si no tiene fields_ok, usar directamente json_original
+  return original as FormularioMantenimientoData;
+};
+
+/**
+ * Combina datos de fields_ok con json_final
+ * json_final tiene prioridad sobre fields_ok
+ */
+const mergeFormData = (
+  fieldsOk: FormularioMantenimientoData | null,
+  jsonFinal: FormularioMantenimientoData | null
+): FormularioMantenimientoData => {
+  // Empezar con un objeto vacío
+  const merged: FormularioMantenimientoData = {
+    dominio: null,
+    modelo_vehiculo: null,
+    km_actual: null,
+    combustible_tipo: null,
+    fecha: null,
+    ultimo_service: null,
+    ultima_distribucion: null,
+    documentacion_seguridad: null,
+    luces: null,
+    neumaticos: null,
+    nivel_de_liquidos: null,
+    funcionamiento: null,
+    estado_general: null,
+    observaciones_finales: null,
+  };
+
+  // Primero aplicar fields_ok (base) - copiar todos los campos, incluyendo campos planos
+  if (fieldsOk) {
+    // Copiar todos los campos de fields_ok usando Object.keys para incluir campos dinámicos
+    Object.keys(fieldsOk).forEach((key) => {
+      const value = fieldsOk[key];
+
+      // Manejar objetos anidados con merge profundo
+      if (
+        key === "documentacion_seguridad" ||
+        key === "luces" ||
+        key === "neumaticos" ||
+        key === "nivel_de_liquidos" ||
+        key === "funcionamiento" ||
+        key === "estado_general" ||
+        key === "ultimo_service" ||
+        key === "ultima_distribucion" ||
+        key === "observaciones_finales"
+      ) {
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          merged[key] = {
+            ...((merged[key] as object) || {}),
+            ...value,
+          } as never;
+        } else {
+          merged[key] = value as never;
+        }
+      } else {
+        // Campos planos (dominio, modelo_vehiculo, etc.) - copiar directamente
+        merged[key] = value as never;
+      }
+    });
+  }
+
+  // Luego aplicar json_final (tiene prioridad) - sobrescribe fields_ok
+  if (jsonFinal) {
+    // Copiar todos los campos de json_final, sobrescribiendo los de fields_ok
+    Object.keys(jsonFinal).forEach((key) => {
+      const value = jsonFinal[key];
+
+      // Manejar objetos anidados con merge profundo
+      if (
+        key === "documentacion_seguridad" ||
+        key === "luces" ||
+        key === "neumaticos" ||
+        key === "nivel_de_liquidos" ||
+        key === "funcionamiento" ||
+        key === "estado_general" ||
+        key === "ultimo_service" ||
+        key === "ultima_distribucion" ||
+        key === "observaciones_finales"
+      ) {
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          const existing = merged[key] as Record<string, unknown> | null;
+          merged[key] = { ...(existing || {}), ...value } as never;
+        } else {
+          merged[key] = value as never;
+        }
+      } else {
+        // Campos planos - sobrescribir completamente
+        merged[key] = value as never;
+      }
+    });
+  }
+
+  return merged;
+};
 
 export const RevisionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +148,9 @@ export const RevisionDetail: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<FormularioMantenimientoData | null>(
+    null
+  );
   const [status, setStatus] = useState("");
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
@@ -52,16 +170,17 @@ export const RevisionDetail: React.FC = () => {
       setRevision(data);
       setStatus(data.status || "pending");
 
-      // Si hay json_final, usarlo; si no, usar json_original como base
-      // Esto permite que el analista complete los campos faltantes
-      const baseData = data.json_final || {};
-      const originalData = data.json_original || {};
+      // Extraer fields_ok del json_original
+      const fieldsOkData = extractFieldsOk(data.json_original);
+      console.log("fields_ok extraído:", fieldsOkData);
 
-      // Combinar: json_final tiene prioridad, pero si falta algo, usar json_original
-      const mergedData = {
-        ...originalData,
-        ...baseData,
-      };
+      // Si hay json_final, usarlo (tiene prioridad sobre fields_ok)
+      const finalData =
+        (data.json_final as FormularioMantenimientoData) || null;
+
+      // Combinar: json_final tiene prioridad, pero si falta algo, usar fields_ok
+      const mergedData = mergeFormData(fieldsOkData, finalData);
+      console.log("Datos combinados para el formulario:", mergedData);
 
       setFormData(mergedData);
     } catch (err: unknown) {
@@ -83,7 +202,7 @@ export const RevisionDetail: React.FC = () => {
       setSuccess("");
       setSpeedDialOpen(false);
 
-      const data = await updateRevision(id, formData, newStatus);
+      const data = await updateRevision(id, formData || {}, newStatus);
 
       setRevision(data);
       setStatus(newStatus);
@@ -136,13 +255,22 @@ export const RevisionDetail: React.FC = () => {
         createdAt={revision.created_at}
         updatedAt={revision.updated_at}
       />
-      <Box mx={2}>
+      <Box
+        sx={{
+          height: "calc(100vh - 64px)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          padding: "2rem 2rem 0 2rem",
+        }}
+      >
         <Box
           sx={{
-            mb: 3,
+            mb: 2,
             display: "flex",
             justifyContent: "flex-end",
             alignItems: "center",
+            flexShrink: 0,
           }}
         >
           <Button variant="outlined" onClick={() => navigate("/revisions")}>
@@ -151,13 +279,13 @@ export const RevisionDetail: React.FC = () => {
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2, flexShrink: 0 }}>
             {error}
           </Alert>
         )}
 
         {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert severity="success" sx={{ mb: 2, flexShrink: 0 }}>
             {success}
           </Alert>
         )}
@@ -165,44 +293,39 @@ export const RevisionDetail: React.FC = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1.4fr" },
             gap: 3,
-            mb: 3,
+            flex: 1,
+            minHeight: 0,
+            overflow: "hidden",
           }}
         >
-          {/* Formulario Editable - Izquierda */}
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Formulario Completo (Editable)
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Complete los campos faltantes basándose en los datos originales.
-              Los campos ya completados desde n8n aparecerán prellenados.
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-            <FormularioMantenimiento
-              initialData={formData}
-              onDataChange={setFormData}
-              readOnly={false}
-            />
-          </Paper>
-
-          {/* JSON Original - Datos recibidos desde n8n - Derecha */}
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Datos Originales (desde n8n)
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Estos son los datos que llegaron automáticamente desde el
-              formulario
-            </Typography>
+          {/* JSON Original - Datos recibidos desde n8n - Izquierda */}
+          <Paper
+            elevation={2}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              height: "100%",
+            }}
+          >
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Datos Originales (desde n8n)
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Estos son los datos que llegaron automáticamente desde el
+                formulario
+              </Typography>
+            </Box>
             <Divider sx={{ mb: 2 }} />
             <Box
               sx={{
                 bgcolor: "#f5f5f5",
                 p: 2,
                 borderRadius: 1,
-                maxHeight: "500px",
+                flex: 1,
                 overflow: "auto",
               }}
             >
@@ -221,6 +344,42 @@ export const RevisionDetail: React.FC = () => {
                   No hay datos originales disponibles
                 </Typography>
               )}
+            </Box>
+          </Paper>
+
+          {/* Formulario Editable - Derecha (más ancho) */}
+          <Paper
+            elevation={2}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              height: "100%",
+            }}
+          >
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Formulario Completo (Editable)
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Complete los campos faltantes basándose en los datos originales.
+                Los campos ya completados desde n8n aparecerán prellenados.
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+
+            <Box
+              sx={{
+                flex: 1,
+                overflow: "auto",
+                minHeight: 0,
+              }}
+            >
+              <FormularioMantenimiento
+                initialData={formData}
+                onDataChange={setFormData}
+                readOnly={false}
+              />
             </Box>
           </Paper>
         </Box>

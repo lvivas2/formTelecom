@@ -8,26 +8,117 @@ import {
   Typography,
   Paper,
   TextareaAutosize,
+  Checkbox,
 } from "@mui/material";
+import type {
+  Neumaticos as NeumaticosType,
+  NeumaticoDetalle,
+  EstadoBRM,
+} from "../entities/form-revision.entity";
 
 interface NeumaticosProps {
-  formData: any;
-  handleChange: (name: string, value: any) => void;
+  neumaticos: NeumaticosType | null;
+  handleChange: (data: NeumaticosType) => void;
 }
 
 export const Neumaticos: React.FC<NeumaticosProps> = ({
-  formData,
+  neumaticos: rawNeumaticos,
   handleChange,
 }) => {
-  const neumaticos = [
-    { name: "cub_derecha", label: "CUBIERTA DERECHA" },
-    { name: "cub_izquierda", label: "CUBIERTA IZQUIERDA" },
-    { name: "tras_derecha", label: "TRASERA DERECHA" },
-    { name: "tras_izquierda", label: "TRASERA IZQUIERDA" },
-    { name: "inf_td", label: "INFERIOR TD" },
-    { name: "inf_ti", label: "INFERIOR TI" },
-    { name: "auxilio", label: "RUEDA DE AUXILIO" },
+  // Normalizar datos si es necesario
+  const normalizeData = (
+    data: NeumaticosType | null | Record<string, unknown>
+  ): NeumaticosType | null => {
+    if (!data) return null;
+    if (typeof data === "object" && "medida" in data) {
+      return data as NeumaticosType;
+    }
+    return null;
+  };
+
+  const neumaticos = normalizeData(rawNeumaticos);
+
+  if (!neumaticos) {
+    return null;
+  }
+
+  // Configuración de neumáticos según la entidad
+  const neumaticosConfig = [
+    {
+      key: "delantera_derecha" as const,
+      label: "DELANTERA DERECHA",
+    },
+    {
+      key: "delantera_izquierda" as const,
+      label: "DELANTERA IZQUIERDA",
+    },
+    {
+      key: "trasera_derecha" as const,
+      label: "TRASERA DERECHA",
+    },
+    {
+      key: "trasera_izquierda" as const,
+      label: "TRASERA IZQUIERDA",
+    },
+    {
+      key: "inferior_td" as const,
+      label: "INFERIOR TD",
+    },
+    {
+      key: "inferior_ti" as const,
+      label: "INFERIOR TI",
+    },
+    {
+      key: "rueda_auxilio" as const,
+      label: "RUEDA DE AUXILIO",
+    },
   ];
+
+  // Helper para actualizar un neumático específico
+  const handleNeumaticoChange = (
+    key: keyof NeumaticosType,
+    updates: Partial<NeumaticoDetalle>
+  ) => {
+    if (
+      key === "medida" ||
+      key === "tuerca_seguridad" ||
+      key === "observaciones"
+    ) {
+      return;
+    }
+    const currentDetalle = neumaticos[key] as NeumaticoDetalle;
+    handleChange({
+      ...neumaticos,
+      [key]: {
+        ...currentDetalle,
+        ...updates,
+      },
+    });
+  };
+
+  // Helper para actualizar medida
+  const handleMedidaChange = (medida: string) => {
+    handleChange({
+      ...neumaticos,
+      medida,
+    });
+  };
+
+  // Helper para actualizar tuerca_seguridad
+  const handleTuercaSeguridadChange = (value: boolean) => {
+    handleChange({
+      ...neumaticos,
+      tuerca_seguridad: value,
+    });
+  };
+
+  // Helper para actualizar observaciones
+  const handleObservacionesChange = (observaciones: string) => {
+    handleChange({
+      ...neumaticos,
+      observaciones: observaciones || null,
+    });
+  };
 
   return (
     <Box>
@@ -48,51 +139,23 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
 
       <Box sx={{ mb: 2, p: 1.5, bgcolor: "#f8f9fa", borderRadius: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <Typography fontWeight="bold">MEDIDA (E): 175/65 R14</Typography>
+          <Typography fontWeight="bold">MEDIDA:</Typography>
           <TextField
             size="small"
-            name="medida_neumaticos"
-            value={formData.medida_neumaticos || ""}
-            onChange={(e) => handleChange("medida_neumaticos", e.target.value)}
-            placeholder="Ingrese medida"
+            name="medida"
+            value={neumaticos.medida || ""}
+            onChange={(e) => handleMedidaChange(e.target.value)}
+            placeholder="Ej: 175/65 R14"
             sx={{ flexGrow: 1, maxWidth: 300 }}
           />
-        </Box>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
-            gap: 2,
-          }}
-        >
-          <TextField
-            fullWidth
-            size="small"
-            label="DOT"
-            name="dot"
-            value={formData.dot || ""}
-            onChange={(e) => handleChange("dot", e.target.value)}
-            placeholder="DOT"
-          />
-          <TextField
-            fullWidth
-            size="small"
-            label="MARCA"
-            name="marca"
-            value={formData.marca || ""}
-            onChange={(e) => handleChange("marca", e.target.value)}
-            placeholder="Marca"
-          />
-          <TextField
-            fullWidth
-            size="small"
-            type="number"
-            label="mm"
-            name="mm"
-            value={formData.mm || ""}
-            onChange={(e) => handleChange("mm", e.target.value)}
-            placeholder="mm"
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={neumaticos.tuerca_seguridad}
+                onChange={(e) => handleTuercaSeguridadChange(e.target.checked)}
+              />
+            }
+            label="TUERCA SEGURIDAD"
           />
         </Box>
       </Box>
@@ -109,47 +172,98 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
           mb: 2,
         }}
       >
-        {neumaticos.map((neumatico) => (
-          <Box key={neumatico.name}>
-            <Paper
-              elevation={2}
-              sx={{
-                p: 2,
-                border: "1px solid #333",
-                borderRadius: 1,
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                fontWeight="bold"
-                sx={{ mb: 1.5 }}
+        {neumaticosConfig.map((config) => {
+          const detalle = neumaticos[config.key] as NeumaticoDetalle;
+          return (
+            <Box key={config.key}>
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 2,
+                  border: "1px solid #333",
+                  borderRadius: 1,
+                }}
               >
-                {neumatico.label}
-              </Typography>
-              <RadioGroup
-                name={neumatico.name}
-                value={formData[neumatico.name] || ""}
-                onChange={(e) => handleChange(neumatico.name, e.target.value)}
-              >
-                <FormControlLabel
-                  value="B"
-                  control={<Radio size="small" />}
-                  label="B - Bueno"
-                />
-                <FormControlLabel
-                  value="R"
-                  control={<Radio size="small" />}
-                  label="R - Regular"
-                />
-                <FormControlLabel
-                  value="M"
-                  control={<Radio size="small" />}
-                  label="M - Malo"
-                />
-              </RadioGroup>
-            </Paper>
-          </Box>
-        ))}
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="bold"
+                  sx={{ mb: 1.5 }}
+                >
+                  {config.label}
+                </Typography>
+                <RadioGroup
+                  name={config.key}
+                  value={detalle?.estado || ""}
+                  onChange={(e) =>
+                    handleNeumaticoChange(config.key, {
+                      estado: e.target.value as EstadoBRM,
+                    })
+                  }
+                >
+                  <FormControlLabel
+                    value="b"
+                    control={<Radio size="small" />}
+                    label="B - Bueno"
+                  />
+                  <FormControlLabel
+                    value="r"
+                    control={<Radio size="small" />}
+                    label="R - Regular"
+                  />
+                  <FormControlLabel
+                    value="m"
+                    control={<Radio size="small" />}
+                    label="M - Malo"
+                  />
+                </RadioGroup>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 1,
+                    mt: 1.5,
+                  }}
+                >
+                  <TextField
+                    size="small"
+                    label="DOT"
+                    value={detalle?.dot || ""}
+                    onChange={(e) =>
+                      handleNeumaticoChange(config.key, {
+                        dot: e.target.value || null,
+                      })
+                    }
+                    placeholder="DOT"
+                  />
+                  <TextField
+                    size="small"
+                    label="MARCA"
+                    value={detalle?.marca || ""}
+                    onChange={(e) =>
+                      handleNeumaticoChange(config.key, {
+                        marca: e.target.value || null,
+                      })
+                    }
+                    placeholder="Marca"
+                  />
+                  <TextField
+                    size="small"
+                    type="number"
+                    label="mm"
+                    value={detalle?.mm || ""}
+                    onChange={(e) =>
+                      handleNeumaticoChange(config.key, {
+                        mm: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                    placeholder="mm"
+                    sx={{ gridColumn: "span 2" }}
+                  />
+                </Box>
+              </Paper>
+            </Box>
+          );
+        })}
       </Box>
 
       <Box>
@@ -164,11 +278,9 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
             border: "1px solid #ccc",
             borderRadius: "4px",
           }}
-          name="observaciones_neumaticos"
-          value={formData.observaciones_neumaticos || ""}
-          onChange={(e) =>
-            handleChange("observaciones_neumaticos", e.target.value)
-          }
+          name="observaciones"
+          value={neumaticos.observaciones || ""}
+          onChange={(e) => handleObservacionesChange(e.target.value)}
         />
       </Box>
     </Box>

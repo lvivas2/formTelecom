@@ -1,9 +1,10 @@
 import React from "react";
 import { Checkbox, TextField, Typography, Box, Paper } from "@mui/material";
+import type { FormularioMantenimientoData } from "../entities/formData";
 
 interface FuncionamientoProps {
-  formData: any;
-  handleChange: (name: string, value: any) => void;
+  formData: FormularioMantenimientoData | null;
+  handleChange: (name: string, value: unknown) => void;
 }
 
 export const Funcionamiento: React.FC<FuncionamientoProps> = ({

@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <AppBar position="static" sx={{ mb: 3 }}>
+    <AppBar position="static">
       <Toolbar>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h6" component="div">

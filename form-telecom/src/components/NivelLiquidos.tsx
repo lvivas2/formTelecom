@@ -13,10 +13,11 @@ import {
   Box,
   TextareaAutosize,
 } from "@mui/material";
+import type { FormularioMantenimientoData } from "../entities/formData";
 
 interface NivelLiquidosProps {
-  formData: any;
-  handleChange: (name: string, value: any) => void;
+  formData: FormularioMantenimientoData | null;
+  handleChange: (name: string, value: unknown) => void;
 }
 
 export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
@@ -173,4 +174,3 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
     </Box>
   );
 };
-

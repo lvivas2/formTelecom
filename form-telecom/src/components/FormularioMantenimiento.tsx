@@ -8,17 +8,20 @@ import { Funcionamiento } from "./Funcionamiento";
 import { EstadoGeneral } from "./EstadoGeneral";
 import { Observaciones } from "./Observaciones";
 import { Footer } from "./Footer";
+import type { FormularioMantenimientoData } from "../entities/formData";
 
 interface FormularioMantenimientoProps {
-  initialData?: any;
-  onDataChange?: (data: any) => void;
+  initialData?: FormularioMantenimientoData | null;
+  onDataChange?: (data: FormularioMantenimientoData) => void;
   readOnly?: boolean;
 }
 
 export const FormularioMantenimiento: React.FC<
   FormularioMantenimientoProps
 > = ({ initialData, onDataChange, readOnly = false }) => {
-  const [formData, setFormData] = useState<any>(initialData || {});
+  const [formData, setFormData] = useState<FormularioMantenimientoData | null>(
+    initialData || null
+  );
 
   useEffect(() => {
     if (initialData) {
@@ -26,13 +29,13 @@ export const FormularioMantenimiento: React.FC<
     }
   }, [initialData]);
 
-  const handleChange = (name: string, value: any) => {
-    if (readOnly) return;
+  const handleChange = (name: string, value: unknown) => {
+    if (readOnly || !formData) return;
 
-    const newData = {
+    const newData: FormularioMantenimientoData = {
       ...formData,
       [name]: value,
-    };
+    } as FormularioMantenimientoData;
     setFormData(newData);
     if (onDataChange) {
       onDataChange(newData);
@@ -68,17 +71,39 @@ export const FormularioMantenimiento: React.FC<
           PM PREVENTIVO Y ORDINARIO CADA 120 DÍAS
         </Box>
 
-        <InformacionGeneral formData={formData} handleChange={handleChange} />
-        <DocumentacionSeguridad
-          formData={formData}
+        <InformacionGeneral
+          formData={formData || null}
           handleChange={handleChange}
         />
-        <Neumaticos formData={formData} handleChange={handleChange} />
-        <NivelLiquidos formData={formData} handleChange={handleChange} />
-        <Funcionamiento formData={formData} handleChange={handleChange} />
-        <EstadoGeneral formData={formData} handleChange={handleChange} />
-        <Observaciones formData={formData} handleChange={handleChange} />
-        <Footer formData={formData} handleChange={handleChange} />
+        <DocumentacionSeguridad
+          documentacionSeguridad={
+            (formData?.documentacion_seguridad as any) || null
+          }
+          handleChange={(docSeg) =>
+            handleChange("documentacion_seguridad", docSeg)
+          }
+        />
+        <Neumaticos
+          neumaticos={(formData?.neumaticos as any) || null}
+          handleChange={(neumaticos) => handleChange("neumaticos", neumaticos)}
+        />
+        <NivelLiquidos
+          formData={formData || null}
+          handleChange={handleChange}
+        />
+        <Funcionamiento
+          formData={formData || null}
+          handleChange={handleChange}
+        />
+        <EstadoGeneral
+          formData={formData || null}
+          handleChange={handleChange}
+        />
+        <Observaciones
+          formData={formData || null}
+          handleChange={handleChange}
+        />
+        <Footer formData={formData || null} handleChange={handleChange} />
 
         {!readOnly && (
           <Box

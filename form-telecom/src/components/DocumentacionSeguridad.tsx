@@ -11,21 +11,208 @@ import {
   TextField,
   Typography,
   Box,
-  TextareaAutosize,
 } from "@mui/material";
+import type {
+  DocumentacionSeguridad as DocumentacionSeguridadType,
+  TieneVencimiento,
+} from "../entities/form-revision.entity";
 
 interface DocumentacionSeguridadProps {
-  formData: any;
-  handleChange: (name: string, value: any) => void;
+  documentacionSeguridad: DocumentacionSeguridadType | null;
+  handleChange: (data: DocumentacionSeguridadType) => void;
 }
 
 export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
-  formData,
+  documentacionSeguridad: rawDocumentacionSeguridad,
   handleChange,
 }) => {
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    handleChange(name, checked);
+  // Normalizar datos: convertir datos antiguos al formato nuevo si es necesario
+  const normalizeData = (
+    data: DocumentacionSeguridadType | null | Record<string, unknown>
+  ): DocumentacionSeguridadType | null => {
+    if (!data) return null;
+
+    // Si ya es del tipo correcto, retornarlo
+    if (typeof data === "object" && "cedula_verde" in data) {
+      const normalized: Record<string, unknown> = { ...data };
+
+      // Normalizar campos con TieneVencimiento
+      const fieldsWithVencimiento = [
+        "cedula_verde",
+        "vtv_rto",
+        "matafuego_1kg",
+        "matafuego_25kg",
+        "certificado_habilitacion_hidros",
+      ];
+
+      fieldsWithVencimiento.forEach((field) => {
+        const value = normalized[field];
+        if (value && typeof value === "object" && "tiene" in value) {
+          // Ya está en formato correcto
+          const tieneValue = (value as { tiene: unknown }).tiene;
+          const vencimientoValue =
+            "vencimiento" in value
+              ? (value as { vencimiento?: unknown }).vencimiento
+              : null;
+          normalized[field] = {
+            tiene:
+              typeof tieneValue === "boolean"
+                ? tieneValue
+                : tieneValue === "true" || tieneValue === true,
+            vencimiento:
+              (typeof vencimientoValue === "string"
+                ? vencimientoValue
+                : null) || null,
+          };
+        } else if (typeof value === "boolean" || typeof value === "string") {
+          // Convertir boolean/string a objeto
+          normalized[field] = {
+            tiene:
+              typeof value === "boolean"
+                ? value
+                : value === "true" || value === "si",
+            vencimiento: null,
+          };
+        }
+      });
+
+      // Normalizar campos booleanos
+      const booleanFields = [
+        "botiquin",
+        "seguro",
+        "llave_rueda",
+        "crickey_gato",
+        "cuarta_remolque",
+        "balizas",
+        "chapa_patente",
+      ];
+
+      booleanFields.forEach((field) => {
+        const value = normalized[field];
+        if (typeof value === "string") {
+          normalized[field] = value === "true" || value === "si";
+        } else if (typeof value !== "boolean") {
+          normalized[field] = false;
+        }
+      });
+
+      // Normalizar tarjeta_combustible
+      if (typeof normalized.tarjeta_combustible !== "string") {
+        normalized.tarjeta_combustible = normalized.tarjeta_combustible
+          ? String(normalized.tarjeta_combustible)
+          : "";
+      }
+
+      return normalized as unknown as DocumentacionSeguridadType;
+    }
+
+    return null;
   };
+
+  const documentacionSeguridad = normalizeData(rawDocumentacionSeguridad);
+
+  // Helper para convertir fecha de DD-MM-YYYY a YYYY-MM-DD (formato input date)
+  const formatDateForInput = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return "";
+    // Si ya está en formato YYYY-MM-DD, retornarlo
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    // Si está en formato DD-MM-YYYY, convertirlo
+    const parts = dateStr.split("-");
+    if (parts.length === 3 && parts[0].length === 2) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Helper para convertir fecha de YYYY-MM-DD a DD-MM-YYYY (formato almacenado)
+  const formatDateForStorage = (dateStr: string): string => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Helper para obtener valor booleano de campos con TieneVencimiento
+  const getTieneVencimientoValue = (
+    value: TieneVencimiento | { tiene: boolean } | undefined
+  ): boolean => {
+    if (!value) return false;
+    if (typeof value === "object" && "tiene" in value) {
+      return value.tiene;
+    }
+    return false;
+  };
+
+  // Helper para obtener fecha de vencimiento
+  const getVencimiento = (
+    value: TieneVencimiento | { tiene: boolean } | undefined
+  ): string => {
+    if (!value || typeof value !== "object") return "";
+    if ("vencimiento" in value && value.vencimiento) {
+      return formatDateForInput(value.vencimiento);
+    }
+    return "";
+  };
+
+  // Helper para actualizar campos con TieneVencimiento
+  const handleTieneVencimientoChange = (
+    field: keyof DocumentacionSeguridadType,
+    tiene: boolean,
+    vencimiento?: string
+  ) => {
+    if (!documentacionSeguridad) return;
+
+    const currentValue = documentacionSeguridad[field];
+    let vencimientoValue: string | null | undefined = null;
+
+    if (vencimiento) {
+      vencimientoValue = formatDateForStorage(vencimiento);
+    } else if (
+      currentValue &&
+      typeof currentValue === "object" &&
+      currentValue !== null &&
+      "vencimiento" in currentValue
+    ) {
+      vencimientoValue = (currentValue as TieneVencimiento).vencimiento || null;
+    }
+
+    const newValue: TieneVencimiento = {
+      tiene,
+      vencimiento: vencimientoValue,
+    };
+
+    handleChange({
+      ...documentacionSeguridad,
+      [field]: newValue,
+    });
+  };
+
+  // Helper para actualizar campos booleanos simples
+  const handleBooleanChange = (
+    field: keyof DocumentacionSeguridadType,
+    value: boolean
+  ) => {
+    if (!documentacionSeguridad) return;
+    handleChange({
+      ...documentacionSeguridad,
+      [field]: value,
+    });
+  };
+
+  // Helper para actualizar tarjeta_combustible (string)
+  const handleTarjetaCombustibleChange = (value: string) => {
+    if (!documentacionSeguridad) return;
+    handleChange({
+      ...documentacionSeguridad,
+      tarjeta_combustible: value,
+    });
+  };
+
+  if (!documentacionSeguridad) {
+    return null;
+  }
 
   return (
     <Box>
@@ -70,47 +257,41 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
               >
                 VENCIMIENTO
               </TableCell>
-              <TableCell
-                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
-              >
-                ITEM
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
-              >
-                B
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
-              >
-                M
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ bgcolor: "#555", color: "white", fontWeight: "bold" }}
-              >
-                OBSERV.
-              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
+            {/* CÉDULA VERDE */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>CÉDULA VERDE</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.cedula_si || false}
+                  checked={getTieneVencimientoValue(
+                    documentacionSeguridad.cedula_verde
+                  )}
                   onChange={(e) =>
-                    handleCheckboxChange("cedula_si", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "cedula_verde",
+                      e.target.checked,
+                      getVencimiento(documentacionSeguridad.cedula_verde) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.cedula_no || false}
+                  checked={
+                    !getTieneVencimientoValue(
+                      documentacionSeguridad.cedula_verde
+                    )
+                  }
                   onChange={(e) =>
-                    handleCheckboxChange("cedula_no", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "cedula_verde",
+                      !e.target.checked,
+                      getVencimiento(documentacionSeguridad.cedula_verde) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
@@ -119,60 +300,53 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
                   type="date"
                   size="small"
                   fullWidth
-                  name="cedula_venc"
-                  value={formData.cedula_venc || ""}
-                  onChange={(e) => handleChange("cedula_venc", e.target.value)}
+                  value={getVencimiento(documentacionSeguridad.cedula_verde)}
+                  onChange={(e) =>
+                    handleTieneVencimientoChange(
+                      "cedula_verde",
+                      getTieneVencimientoValue(
+                        documentacionSeguridad.cedula_verde
+                      ),
+                      e.target.value
+                    )
+                  }
                   InputLabelProps={{ shrink: true }}
                 />
               </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>
-                LUZ GIRO DELANTERA / TRASERA
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_giro_del_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_giro_del_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_giro_del_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_giro_del_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="luz_giro_del_obs"
-                  value={formData.luz_giro_del_obs || ""}
-                  onChange={(e) =>
-                    handleChange("luz_giro_del_obs", e.target.value)
-                  }
-                />
-              </TableCell>
             </TableRow>
+
+            {/* VTV / RTO */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>
                 VENCIMIENTO VTV / RTO
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.vtv_si || false}
+                  checked={getTieneVencimientoValue(
+                    documentacionSeguridad.vtv_rto
+                  )}
                   onChange={(e) =>
-                    handleCheckboxChange("vtv_si", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "vtv_rto",
+                      e.target.checked,
+                      getVencimiento(documentacionSeguridad.vtv_rto) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.vtv_no || false}
+                  checked={
+                    !getTieneVencimientoValue(documentacionSeguridad.vtv_rto)
+                  }
                   onChange={(e) =>
-                    handleCheckboxChange("vtv_no", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "vtv_rto",
+                      !e.target.checked,
+                      getVencimiento(documentacionSeguridad.vtv_rto) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
@@ -181,54 +355,51 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
                   type="date"
                   size="small"
                   fullWidth
-                  name="vtv_venc"
-                  value={formData.vtv_venc || ""}
-                  onChange={(e) => handleChange("vtv_venc", e.target.value)}
+                  value={getVencimiento(documentacionSeguridad.vtv_rto)}
+                  onChange={(e) =>
+                    handleTieneVencimientoChange(
+                      "vtv_rto",
+                      getTieneVencimientoValue(documentacionSeguridad.vtv_rto),
+                      e.target.value
+                    )
+                  }
                   InputLabelProps={{ shrink: true }}
                 />
               </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>BALIZA / GIRO</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.baliza_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("baliza_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.baliza_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("baliza_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="baliza_obs"
-                  value={formData.baliza_obs || ""}
-                  onChange={(e) => handleChange("baliza_obs", e.target.value)}
-                />
-              </TableCell>
             </TableRow>
+
+            {/* MATAFUEGO 1KG */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>MATAFUEGO 1KG</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.matafuego1_si || false}
+                  checked={getTieneVencimientoValue(
+                    documentacionSeguridad.matafuego_1kg
+                  )}
                   onChange={(e) =>
-                    handleCheckboxChange("matafuego1_si", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "matafuego_1kg",
+                      e.target.checked,
+                      getVencimiento(documentacionSeguridad.matafuego_1kg) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.matafuego1_no || false}
+                  checked={
+                    !getTieneVencimientoValue(
+                      documentacionSeguridad.matafuego_1kg
+                    )
+                  }
                   onChange={(e) =>
-                    handleCheckboxChange("matafuego1_no", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "matafuego_1kg",
+                      !e.target.checked,
+                      getVencimiento(documentacionSeguridad.matafuego_1kg) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
@@ -237,56 +408,53 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
                   type="date"
                   size="small"
                   fullWidth
-                  name="matafuego1_venc"
-                  value={formData.matafuego1_venc || ""}
+                  value={getVencimiento(documentacionSeguridad.matafuego_1kg)}
                   onChange={(e) =>
-                    handleChange("matafuego1_venc", e.target.value)
+                    handleTieneVencimientoChange(
+                      "matafuego_1kg",
+                      getTieneVencimientoValue(
+                        documentacionSeguridad.matafuego_1kg
+                      ),
+                      e.target.value
+                    )
                   }
                   InputLabelProps={{ shrink: true }}
                 />
               </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>LUZ BAJA</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_baja_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_baja_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_baja_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_baja_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="luz_baja_obs"
-                  value={formData.luz_baja_obs || ""}
-                  onChange={(e) => handleChange("luz_baja_obs", e.target.value)}
-                />
-              </TableCell>
             </TableRow>
+
+            {/* MATAFUEGO 2.5KG */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>MATAFUEGO 2.5KG</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.matafuego2_si || false}
+                  checked={getTieneVencimientoValue(
+                    documentacionSeguridad.matafuego_25kg
+                  )}
                   onChange={(e) =>
-                    handleCheckboxChange("matafuego2_si", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "matafuego_25kg",
+                      e.target.checked,
+                      getVencimiento(documentacionSeguridad.matafuego_25kg) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.matafuego2_no || false}
+                  checked={
+                    !getTieneVencimientoValue(
+                      documentacionSeguridad.matafuego_25kg
+                    )
+                  }
                   onChange={(e) =>
-                    handleCheckboxChange("matafuego2_no", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "matafuego_25kg",
+                      !e.target.checked,
+                      getVencimiento(documentacionSeguridad.matafuego_25kg) ||
+                        undefined
+                    )
                   }
                 />
               </TableCell>
@@ -295,172 +463,91 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
                   type="date"
                   size="small"
                   fullWidth
-                  name="matafuego2_venc"
-                  value={formData.matafuego2_venc || ""}
+                  value={getVencimiento(documentacionSeguridad.matafuego_25kg)}
                   onChange={(e) =>
-                    handleChange("matafuego2_venc", e.target.value)
+                    handleTieneVencimientoChange(
+                      "matafuego_25kg",
+                      getTieneVencimientoValue(
+                        documentacionSeguridad.matafuego_25kg
+                      ),
+                      e.target.value
+                    )
                   }
                   InputLabelProps={{ shrink: true }}
                 />
               </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>LUZ ALTA</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_alta_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_alta_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_alta_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_alta_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="luz_alta_obs"
-                  value={formData.luz_alta_obs || ""}
-                  onChange={(e) => handleChange("luz_alta_obs", e.target.value)}
-                />
-              </TableCell>
             </TableRow>
+
+            {/* BOTIQUIN */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>BOTIQUIN</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.botiquin_si || false}
+                  checked={documentacionSeguridad.botiquin}
                   onChange={(e) =>
-                    handleCheckboxChange("botiquin_si", e.target.checked)
+                    handleBooleanChange("botiquin", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.botiquin_no || false}
+                  checked={!documentacionSeguridad.botiquin}
                   onChange={(e) =>
-                    handleCheckboxChange("botiquin_no", e.target.checked)
+                    handleBooleanChange("botiquin", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="botiquin_venc"
-                  value={formData.botiquin_venc || ""}
-                  onChange={(e) =>
-                    handleChange("botiquin_venc", e.target.value)
-                  }
-                />
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>ANTINIEBLA</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.antiniebla_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("antiniebla_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.antiniebla_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("antiniebla_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="antiniebla_obs"
-                  value={formData.antiniebla_obs || ""}
-                  onChange={(e) =>
-                    handleChange("antiniebla_obs", e.target.value)
-                  }
-                />
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* SEGURO */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>SEGURO</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.seguro_si || false}
+                  checked={documentacionSeguridad.seguro}
                   onChange={(e) =>
-                    handleCheckboxChange("seguro_si", e.target.checked)
+                    handleBooleanChange("seguro", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.seguro_no || false}
+                  checked={!documentacionSeguridad.seguro}
                   onChange={(e) =>
-                    handleCheckboxChange("seguro_no", e.target.checked)
+                    handleBooleanChange("seguro", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="seguro_venc"
-                  value={formData.seguro_venc || ""}
-                  onChange={(e) => handleChange("seguro_venc", e.target.value)}
-                />
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>LUZ RETROCESO</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_retro_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_retro_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_retro_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_retro_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="luz_retro_obs"
-                  value={formData.luz_retro_obs || ""}
-                  onChange={(e) =>
-                    handleChange("luz_retro_obs", e.target.value)
-                  }
-                />
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* TARJETA COMBUSTIBLE */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>
                 TARJETA COMBUSTIBLE
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.tarjeta_si || false}
+                  checked={!!documentacionSeguridad.tarjeta_combustible}
                   onChange={(e) =>
-                    handleCheckboxChange("tarjeta_si", e.target.checked)
+                    handleTarjetaCombustibleChange(
+                      e.target.checked ? "SHELL" : ""
+                    )
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.tarjeta_no || false}
+                  checked={!documentacionSeguridad.tarjeta_combustible}
                   onChange={(e) =>
-                    handleCheckboxChange("tarjeta_no", e.target.checked)
+                    handleTarjetaCombustibleChange(
+                      !e.target.checked ? "" : "SHELL"
+                    )
                   }
                 />
               </TableCell>
@@ -468,241 +555,171 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
                 <TextField
                   size="small"
                   fullWidth
-                  name="tarjeta_venc"
-                  value={formData.tarjeta_venc || ""}
-                  onChange={(e) => handleChange("tarjeta_venc", e.target.value)}
-                  placeholder="TICKET + CARD"
-                />
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>LUZ STOP</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_stop_b || false}
+                  value={documentacionSeguridad.tarjeta_combustible || ""}
                   onChange={(e) =>
-                    handleCheckboxChange("luz_stop_b", e.target.checked)
+                    handleTarjetaCombustibleChange(e.target.value)
                   }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_stop_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_stop_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="luz_stop_obs"
-                  value={formData.luz_stop_obs || ""}
-                  onChange={(e) => handleChange("luz_stop_obs", e.target.value)}
+                  placeholder="VPF / SHELL / TICKET-CARD"
                 />
               </TableCell>
             </TableRow>
+
+            {/* LLAVE DE RUEDA */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>LLAVE DE RUEDA</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.llave_si || false}
+                  checked={documentacionSeguridad.llave_rueda}
                   onChange={(e) =>
-                    handleCheckboxChange("llave_si", e.target.checked)
+                    handleBooleanChange("llave_rueda", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.llave_no || false}
+                  checked={!documentacionSeguridad.llave_rueda}
                   onChange={(e) =>
-                    handleCheckboxChange("llave_no", e.target.checked)
+                    handleBooleanChange("llave_rueda", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="llave_venc"
-                  value={formData.llave_venc || ""}
-                  onChange={(e) => handleChange("llave_venc", e.target.value)}
-                />
-              </TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>LUZ POSICIÓN</TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_pos_b || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_pos_b", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Checkbox
-                  checked={formData.luz_pos_m || false}
-                  onChange={(e) =>
-                    handleCheckboxChange("luz_pos_m", e.target.checked)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="luz_pos_obs"
-                  value={formData.luz_pos_obs || ""}
-                  onChange={(e) => handleChange("luz_pos_obs", e.target.value)}
-                />
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* CRICKEY / GATO */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>CRICKEY / GATO</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.crickey_si || false}
+                  checked={documentacionSeguridad.crickey_gato}
                   onChange={(e) =>
-                    handleCheckboxChange("crickey_si", e.target.checked)
+                    handleBooleanChange("crickey_gato", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.crickey_no || false}
+                  checked={!documentacionSeguridad.crickey_gato}
                   onChange={(e) =>
-                    handleCheckboxChange("crickey_no", e.target.checked)
+                    handleBooleanChange("crickey_gato", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="crickey_venc"
-                  value={formData.crickey_venc || ""}
-                  onChange={(e) => handleChange("crickey_venc", e.target.value)}
-                />
-              </TableCell>
-              <TableCell colSpan={4} sx={{ fontWeight: 500 }}>
-                OBSERVACIONES:
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* CUARTA DE REMOLQUE */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>CUARTA DE REMOLQUE</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.cuarta_si || false}
+                  checked={documentacionSeguridad.cuarta_remolque}
                   onChange={(e) =>
-                    handleCheckboxChange("cuarta_si", e.target.checked)
+                    handleBooleanChange("cuarta_remolque", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.cuarta_no || false}
+                  checked={!documentacionSeguridad.cuarta_remolque}
                   onChange={(e) =>
-                    handleCheckboxChange("cuarta_no", e.target.checked)
+                    handleBooleanChange("cuarta_remolque", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="cuarta_venc"
-                  value={formData.cuarta_venc || ""}
-                  onChange={(e) => handleChange("cuarta_venc", e.target.value)}
-                />
-              </TableCell>
-              <TableCell colSpan={4} rowSpan={5}>
-                <TextareaAutosize
-                  minRows={5}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                  }}
-                  name="observaciones_luces"
-                  value={formData.observaciones_luces || ""}
-                  onChange={(e) =>
-                    handleChange("observaciones_luces", e.target.value)
-                  }
-                />
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* BALIZAS */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>BALIZAS</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.balizas_si || false}
+                  checked={documentacionSeguridad.balizas}
                   onChange={(e) =>
-                    handleCheckboxChange("balizas_si", e.target.checked)
+                    handleBooleanChange("balizas", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.balizas_no || false}
+                  checked={!documentacionSeguridad.balizas}
                   onChange={(e) =>
-                    handleCheckboxChange("balizas_no", e.target.checked)
+                    handleBooleanChange("balizas", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="balizas_venc"
-                  value={formData.balizas_venc || ""}
-                  onChange={(e) => handleChange("balizas_venc", e.target.value)}
-                />
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* CHAPA PATENTE */}
             <TableRow>
-              <TableCell sx={{ fontWeight: 500 }}>CHALECO PATENTE</TableCell>
+              <TableCell sx={{ fontWeight: 500 }}>CHAPA PATENTE</TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.chaleco_si || false}
+                  checked={documentacionSeguridad.chapa_patente}
                   onChange={(e) =>
-                    handleCheckboxChange("chaleco_si", e.target.checked)
+                    handleBooleanChange("chapa_patente", e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.chaleco_no || false}
+                  checked={!documentacionSeguridad.chapa_patente}
                   onChange={(e) =>
-                    handleCheckboxChange("chaleco_no", e.target.checked)
+                    handleBooleanChange("chapa_patente", !e.target.checked)
                   }
                 />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  name="chaleco_venc"
-                  value={formData.chaleco_venc || ""}
-                  onChange={(e) => handleChange("chaleco_venc", e.target.value)}
-                />
+                <TextField size="small" fullWidth disabled />
               </TableCell>
             </TableRow>
+
+            {/* CERTIFICADO HABILITACION HIDROS */}
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>
                 CERTIFICADO HABILITACION TECNICA (SOLO HIDROS)
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.cert_si || false}
+                  checked={getTieneVencimientoValue(
+                    documentacionSeguridad.certificado_habilitacion_hidros
+                  )}
                   onChange={(e) =>
-                    handleCheckboxChange("cert_si", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "certificado_habilitacion_hidros",
+                      e.target.checked,
+                      getVencimiento(
+                        documentacionSeguridad.certificado_habilitacion_hidros
+                      ) || undefined
+                    )
                   }
                 />
               </TableCell>
               <TableCell align="center">
                 <Checkbox
-                  checked={formData.cert_no || false}
+                  checked={
+                    !getTieneVencimientoValue(
+                      documentacionSeguridad.certificado_habilitacion_hidros
+                    )
+                  }
                   onChange={(e) =>
-                    handleCheckboxChange("cert_no", e.target.checked)
+                    handleTieneVencimientoChange(
+                      "certificado_habilitacion_hidros",
+                      !e.target.checked,
+                      getVencimiento(
+                        documentacionSeguridad.certificado_habilitacion_hidros
+                      ) || undefined
+                    )
                   }
                 />
               </TableCell>
@@ -711,9 +728,18 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
                   type="date"
                   size="small"
                   fullWidth
-                  name="cert_venc"
-                  value={formData.cert_venc || ""}
-                  onChange={(e) => handleChange("cert_venc", e.target.value)}
+                  value={getVencimiento(
+                    documentacionSeguridad.certificado_habilitacion_hidros
+                  )}
+                  onChange={(e) =>
+                    handleTieneVencimientoChange(
+                      "certificado_habilitacion_hidros",
+                      getTieneVencimientoValue(
+                        documentacionSeguridad.certificado_habilitacion_hidros
+                      ),
+                      e.target.value
+                    )
+                  }
                   InputLabelProps={{ shrink: true }}
                 />
               </TableCell>
@@ -724,4 +750,3 @@ export const DocumentacionSeguridad: React.FC<DocumentacionSeguridadProps> = ({
     </Box>
   );
 };
-
