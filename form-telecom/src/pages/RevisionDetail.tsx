@@ -1,29 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
-  Typography,
-  Paper,
   Button,
   Alert,
   CircularProgress,
-  Divider,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
+  Snackbar,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   getRevisionById,
   updateRevision,
+  savePartialRevision,
   type RevisionDetail as RevisionDetailType,
 } from "../services/revisionService";
 import { STATUSES } from "../entities/status";
-import { FormularioMantenimiento } from "../components/FormularioMantenimiento";
 import { Header } from "../components/Header";
 import { DatosOriginales } from "../components/DatosOriginales";
+import { AutoSaveIndicator } from "../components/AutoSaveIndicator";
+import { QuickStatusDial } from "../components/QuickStatusDial";
+import { RevisionFormSection } from "../components/RevisionFormSection";
+import { useAutoSave } from "../hooks/useAutoSave";
 import type { FormularioMantenimientoData } from "../entities/formData";
 
 /**
@@ -141,6 +138,46 @@ const mergeFormData = (
   return merged;
 };
 
+// Componente memoizado para el contenido del grid
+// Evita re-renderizados cuando cambia el estado del SpeedDial
+interface FormContentProps {
+  revision: RevisionDetailType;
+  formData: FormularioMantenimientoData | null;
+  onFormDataChange: (data: FormularioMantenimientoData) => void;
+}
+
+const FormContent = React.memo<FormContentProps>(
+  ({ revision, formData, onFormDataChange }) => {
+    return (
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1.4fr" },
+          gap: 3,
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
+        {/* Datos Originales - Izquierda */}
+        <DatosOriginales
+          jsonOriginal={revision.json_original}
+          formData={formData}
+          updatedAt={revision.updated_at}
+        />
+
+        {/* Formulario Editable - Derecha (más ancho) - Componente aislado y memoizado */}
+        <RevisionFormSection
+          formData={formData}
+          onDataChange={onFormDataChange}
+        />
+      </Box>
+    );
+  }
+);
+
+FormContent.displayName = "FormContent";
+
 export const RevisionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -153,15 +190,48 @@ export const RevisionDetail: React.FC = () => {
     null
   );
   const [status, setStatus] = useState("");
-  const [speedDialOpen, setSpeedDialOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
+  // Callback memoizado para cambio de datos del formulario
+  // Solo se crea una vez, manteniendo la referencia estable para componentes memoizados
+  const handleDataChange = useCallback(
+    (data: FormularioMantenimientoData) => {
+      setFormData(data);
+    },
+    [] // Sin dependencias: la función es estable
+  );
+
+  // Callback memoizado para autoguardado
+  const handleAutoSave = useCallback(
+    async (data: FormularioMantenimientoData | null) => {
+      if (!id || !data) return;
+      await savePartialRevision(id, data);
+    },
+    [id]
+  );
+
+  // Hook de autoguardado
+  const {
+    isSaving,
+    isSaved,
+    error: autoSaveError,
+  } = useAutoSave({
+    data: formData,
+    onSave: handleAutoSave,
+    debounceMs: 500,
+    enabled: !!id && !!formData && !loading,
+  });
+
+  // Mostrar error en Snackbar si hay error de autoguardado
   useEffect(() => {
-    if (id) {
-      fetchRevision();
+    if (autoSaveError) {
+      setSnackbarMessage(`Error al guardar: ${autoSaveError.message}`);
+      setSnackbarOpen(true);
     }
-  }, [id]);
+  }, [autoSaveError]);
 
-  const fetchRevision = async () => {
+  const fetchRevision = useCallback(async () => {
     if (!id) return;
 
     try {
@@ -173,7 +243,6 @@ export const RevisionDetail: React.FC = () => {
 
       // Extraer fields_ok del json_original
       const fieldsOkData = extractFieldsOk(data.json_original);
-      console.log("fields_ok extraído:", fieldsOkData);
 
       // Si hay json_final, usarlo (tiene prioridad sobre fields_ok)
       const finalData =
@@ -181,7 +250,6 @@ export const RevisionDetail: React.FC = () => {
 
       // Combinar: json_final tiene prioridad, pero si falta algo, usar fields_ok
       const mergedData = mergeFormData(fieldsOkData, finalData);
-      console.log("Datos combinados para el formulario:", mergedData);
 
       setFormData(mergedData);
     } catch (err: unknown) {
@@ -192,35 +260,53 @@ export const RevisionDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const handleQuickStatusChange = async (newStatus: string) => {
-    if (!id || saving || status === newStatus) return;
-
-    try {
-      setSaving(true);
-      setError("");
-      setSuccess("");
-      setSpeedDialOpen(false);
-
-      const data = await updateRevision(id, formData || {}, newStatus);
-
-      setRevision(data);
-      setStatus(newStatus);
-      setSuccess(
-        `Estado actualizado a: ${
-          STATUSES.find((s) => s.value === newStatus)?.label || newStatus
-        }`
-      );
-    } catch (err: unknown) {
-      console.error("Error updating status:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Error al actualizar el estado";
-      setError(errorMessage);
-    } finally {
-      setSaving(false);
+  useEffect(() => {
+    if (id) {
+      fetchRevision();
     }
-  };
+  }, [id, fetchRevision]);
+
+  // Función principal para cambio de estado (no memoizada, se usa internamente)
+  const handleQuickStatusChange = useCallback(
+    async (newStatus: string) => {
+      if (!id || saving || status === newStatus) return;
+
+      try {
+        setSaving(true);
+        setError("");
+        setSuccess("");
+
+        const data = await updateRevision(id, formData || {}, newStatus);
+
+        setRevision(data);
+        setStatus(newStatus);
+        setSuccess(
+          `Estado actualizado a: ${
+            STATUSES.find((s) => s.value === newStatus)?.label || newStatus
+          }`
+        );
+      } catch (err: unknown) {
+        console.error("Error updating status:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Error al actualizar el estado";
+        setError(errorMessage);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [id, saving, status, formData]
+  );
+
+  // Callback memoizado para el SpeedDial
+  // Mantiene referencia estable para evitar re-renderizados innecesarios
+  const handleStatusChange = useCallback(
+    (newStatus: string) => {
+      handleQuickStatusChange(newStatus);
+    },
+    [handleQuickStatusChange]
+  );
 
   if (loading) {
     return (
@@ -257,6 +343,13 @@ export const RevisionDetail: React.FC = () => {
         updatedAt={revision.updated_at}
         onBack={() => navigate("/revisions")}
         backLabel="Volver a Revisiones"
+        rightAction={
+          <AutoSaveIndicator
+            isSaving={isSaving}
+            isSaved={isSaved}
+            error={autoSaveError}
+          />
+        }
       />
       <Box
         sx={{
@@ -279,91 +372,34 @@ export const RevisionDetail: React.FC = () => {
           </Alert>
         )}
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1.4fr" },
-            gap: 3,
-            flex: 1,
-            minHeight: 0,
-            overflow: "hidden",
-          }}
-        >
-          {/* Datos Originales - Izquierda */}
-          <DatosOriginales
-            jsonOriginal={revision.json_original}
-            formData={formData}
-            updatedAt={revision.updated_at}
-          />
-
-          {/* Formulario Editable - Derecha (más ancho) */}
-          <Paper
-            elevation={2}
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              height: "100%",
-            }}
-          >
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Formulario Completo (Editable)
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Complete los campos faltantes basándose en los datos originales.
-                Los campos ya completados desde n8n aparecerán prellenados.
-              </Typography>
-            </Box>
-            <Divider sx={{ mb: 3 }} />
-
-            <Box
-              sx={{
-                flex: 1,
-                overflow: "auto",
-                minHeight: 0,
-              }}
-            >
-              <FormularioMantenimiento
-                initialData={formData}
-                onDataChange={setFormData}
-                readOnly={false}
-              />
-            </Box>
-          </Paper>
-        </Box>
+        <FormContent
+          revision={revision}
+          formData={formData}
+          onFormDataChange={handleDataChange}
+        />
 
         {/* Speed Dial Flotante para cambio rápido de estado */}
-        <SpeedDial
-          ariaLabel="Cambiar estado de revisión"
-          sx={{
-            position: "fixed",
-            bottom: { xs: 16, md: 24 },
-            right: { xs: 16, md: 24 },
-            zIndex: 1000,
-          }}
-          icon={<SpeedDialIcon />}
-          onClose={() => setSpeedDialOpen(false)}
-          onOpen={() => setSpeedDialOpen(true)}
-          open={speedDialOpen}
+        <QuickStatusDial
+          currentStatus={status}
+          onStatusChange={handleStatusChange}
+          disabled={saving}
+        />
+
+        {/* Snackbar para errores de autoguardado */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={5000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          {status !== "in_review" && (
-            <SpeedDialAction
-              key="in_review"
-              icon={<EditIcon />}
-              tooltipTitle="En Revisión"
-              onClick={() => handleQuickStatusChange("in_review")}
-            />
-          )}
-          {status !== "completed" && (
-            <SpeedDialAction
-              key="completed"
-              icon={<CheckCircleIcon />}
-              tooltipTitle="Completado"
-              onClick={() => handleQuickStatusChange("completed")}
-            />
-          )}
-        </SpeedDial>
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity="error"
+            sx={{ width: "100%" }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </>
   );

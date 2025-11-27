@@ -154,9 +154,10 @@ export interface EstadoGeneral {
   alfombras: EstadoBRM;
   tapizados: EstadoBRM;
   parabrisas: EstadoBRM;
-  porta_cajuela: EstadoBRM;
+  porta_escalera: EstadoBRM;
   estado_pintura: EstadoBRM;
   faros_traseros: EstadoBRM;
+  enganche: EstadoBRM;
   ficha_enganche: EstadoBRM;
   estado_carroceria: EstadoBRM;
   limpieza_exterior: EstadoBRM;
@@ -166,7 +167,7 @@ export interface EstadoGeneral {
   bandas_refractivas: EstadoBRM;
   opticas_delanteras: EstadoBRM;
   paragolpe_delantero: EstadoBRM;
-  puertas?: EstadoBRM | null;
+  ploteo?: EstadoBRM | null;
   separador_de_carga?: EstadoBRM | null;
   cinturones_de_seguridad: EstadoBRM;
   equipamiento_hidraulico: {

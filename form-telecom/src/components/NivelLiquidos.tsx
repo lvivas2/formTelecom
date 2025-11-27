@@ -77,6 +77,7 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
   ];
 
   // Helper para actualizar un líquido específico
+  // Permite deseleccionar enviando null si se hace clic en el mismo valor
   const handleLiquidoChange = (
     key: keyof NivelLiquidosType,
     value: EstadoBRM
@@ -85,10 +86,22 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
       return;
     }
     if (!nivelLiquidos) return;
-    handleChange({
-      ...nivelLiquidos,
-      [key]: value,
-    });
+
+    const currentValue = nivelLiquidos[key] as EstadoBRM | null | undefined;
+
+    // Si se hace clic en el mismo valor, deseleccionar (enviar null)
+    if (currentValue === value) {
+      handleChange({
+        ...nivelLiquidos,
+        [key]: null,
+      });
+    } else {
+      // Si es un valor diferente, actualizar
+      handleChange({
+        ...nivelLiquidos,
+        [key]: value,
+      });
+    }
   };
 
   // Helper para actualizar posee_perdida
@@ -157,7 +170,11 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
                   <TableCell align="center">
                     <Radio
                       checked={estado === "b"}
-                      onChange={() => handleLiquidoChange(config.key, "b")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLiquidoChange(config.key, "b");
+                      }}
                       value="b"
                       size="small"
                     />
@@ -165,7 +182,11 @@ export const NivelLiquidos: React.FC<NivelLiquidosProps> = ({
                   <TableCell align="center">
                     <Radio
                       checked={estado === "m"}
-                      onChange={() => handleLiquidoChange(config.key, "m")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLiquidoChange(config.key, "m");
+                      }}
                       value="m"
                       size="small"
                     />

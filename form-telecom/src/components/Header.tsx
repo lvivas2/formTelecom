@@ -10,6 +10,7 @@ interface HeaderProps {
   updatedAt?: string | null;
   onBack?: () => void;
   backLabel?: string;
+  rightAction?: React.ReactNode;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   updatedAt,
   onBack,
   backLabel = "Volver",
+  rightAction,
 }) => {
   const { signOut, user } = useAuth();
 
@@ -67,24 +69,27 @@ export const Header: React.FC<HeaderProps> = ({
             </Box>
           )}
         </Box>
-        {user && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Typography
-              variant="body2"
-              sx={{ display: { xs: "none", sm: "block" } }}
-            >
-              {user.email}
-            </Typography>
-            <Button
-              color="inherit"
-              onClick={handleLogout}
-              startIcon={<LogoutIcon />}
-              sx={{ textTransform: "none" }}
-            >
-              Cerrar Sesión
-            </Button>
-          </Box>
-        )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {rightAction && <Box>{rightAction}</Box>}
+          {user && (
+            <>
+              <Typography
+                variant="body2"
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
+                {user.email}
+              </Typography>
+              <Button
+                color="inherit"
+                onClick={handleLogout}
+                startIcon={<LogoutIcon />}
+                sx={{ textTransform: "none" }}
+              >
+                Cerrar Sesión
+              </Button>
+            </>
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );

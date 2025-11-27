@@ -53,7 +53,30 @@ export const getRevisionById = async (id: string): Promise<RevisionDetail> => {
 };
 
 /**
+ * Guarda parcialmente una revisión (solo json_final, sin cambiar status)
+ * Usado para autoguardado mientras el analista trabaja
+ */
+export const savePartialRevision = async (
+  id: string,
+  jsonFinal: any
+): Promise<void> => {
+  const { error } = await supabase
+    .from("form_revision")
+    .update({
+      json_final: jsonFinal,
+      updated_at: new Date().toISOString(),
+      // NO actualizamos status - se mantiene como está
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message || "Error al guardar cambios parciales");
+  }
+};
+
+/**
  * Actualiza una revisión con json_final y status
+ * Usado cuando el analista finaliza explícitamente la revisión
  */
 export const updateRevision = async (
   id: string,

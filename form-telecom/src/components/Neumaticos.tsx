@@ -3,7 +3,6 @@ import {
   TextField,
   FormControlLabel,
   Radio,
-  RadioGroup,
   Box,
   Typography,
   Paper,
@@ -79,6 +78,7 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
   ];
 
   // Helper para actualizar un neumático específico
+  // Permite deseleccionar enviando null si se hace clic en el mismo valor
   const handleNeumaticoChange = (
     key: keyof NeumaticosType,
     updates: Partial<NeumaticoDetalle>
@@ -92,13 +92,26 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
     }
     if (!neumaticos) return;
     const currentDetalle = neumaticos[key] as NeumaticoDetalle;
-    handleChange({
-      ...neumaticos,
-      [key]: {
-        ...currentDetalle,
-        ...updates,
-      },
-    });
+
+    // Si se actualiza el estado y es el mismo valor, deseleccionar (enviar null)
+    if ("estado" in updates && currentDetalle?.estado === updates.estado) {
+      handleChange({
+        ...neumaticos,
+        [key]: {
+          ...currentDetalle,
+          estado: null,
+        },
+      });
+    } else {
+      // Actualización normal
+      handleChange({
+        ...neumaticos,
+        [key]: {
+          ...currentDetalle,
+          ...updates,
+        },
+      });
+    }
   };
 
   // Helper para actualizar medida
@@ -155,31 +168,56 @@ export const Neumaticos: React.FC<NeumaticosProps> = ({
         <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1.5 }}>
           {config.label}
         </Typography>
-        <RadioGroup
-          name={config.key}
-          value={detalle?.estado || ""}
-          onChange={(e) =>
-            handleNeumaticoChange(config.key, {
-              estado: e.target.value as EstadoBRM,
-            })
-          }
-        >
+        <Box>
           <FormControlLabel
-            value="b"
-            control={<Radio size="small" />}
+            control={
+              <Radio
+                checked={detalle?.estado === "b"}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNeumaticoChange(config.key, {
+                    estado: "b" as EstadoBRM,
+                  });
+                }}
+                size="small"
+              />
+            }
             label="B - Bueno"
           />
           <FormControlLabel
-            value="r"
-            control={<Radio size="small" />}
+            control={
+              <Radio
+                checked={detalle?.estado === "r"}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNeumaticoChange(config.key, {
+                    estado: "r" as EstadoBRM,
+                  });
+                }}
+                size="small"
+              />
+            }
             label="R - Regular"
           />
           <FormControlLabel
-            value="m"
-            control={<Radio size="small" />}
+            control={
+              <Radio
+                checked={detalle?.estado === "m"}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNeumaticoChange(config.key, {
+                    estado: "m" as EstadoBRM,
+                  });
+                }}
+                size="small"
+              />
+            }
             label="M - Malo"
           />
-        </RadioGroup>
+        </Box>
         <Box sx={{ mt: 1.5 }}>
           <TextField
             size="small"

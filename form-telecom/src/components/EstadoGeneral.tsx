@@ -94,17 +94,21 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
       label: "PARAGOLPE TRASERO",
     },
     {
-      key: "porta_cajuela" as const,
-      label: "PORTA CAJUELA",
+      key: "porta_escalera" as const,
+      label: "PORTA ESCALERA",
     },
     {
-      key: "puertas" as const,
-      label: "PUERTAS",
+      key: "ploteo" as const,
+      label: "PLOTEO",
       optional: true,
     },
     {
       key: "bandas_refractivas" as const,
       label: "BANDAS REFRACTIVAS",
+    },
+    {
+      key: "enganche" as const,
+      label: "ENGANCHE",
     },
     {
       key: "ficha_enganche" as const,
@@ -130,6 +134,7 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
   ];
 
   // Helper para actualizar un campo de estado general específico
+  // Permite deseleccionar enviando null si se hace clic en el mismo valor
   const handleEstadoChange = (
     key: keyof EstadoGeneralType,
     value: EstadoBRM
@@ -142,10 +147,22 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
       return;
     }
     if (!estadoGeneral) return;
-    handleChange({
-      ...estadoGeneral,
-      [key]: value,
-    });
+
+    const currentValue = estadoGeneral[key] as EstadoBRM | null | undefined;
+
+    // Si se hace clic en el mismo valor, deseleccionar (enviar null)
+    if (currentValue === value) {
+      handleChange({
+        ...estadoGeneral,
+        [key]: null,
+      });
+    } else {
+      // Si es un valor diferente, actualizar
+      handleChange({
+        ...estadoGeneral,
+        [key]: value,
+      });
+    }
   };
 
   // Helper para actualizar cupula
@@ -232,7 +249,11 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                   <TableCell align="center">
                     <Radio
                       checked={estado === "b"}
-                      onChange={() => handleEstadoChange(config.key, "b")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEstadoChange(config.key, "b");
+                      }}
                       value="b"
                       size="small"
                     />
@@ -240,7 +261,11 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                   <TableCell align="center">
                     <Radio
                       checked={estado === "r"}
-                      onChange={() => handleEstadoChange(config.key, "r")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEstadoChange(config.key, "r");
+                      }}
                       value="r"
                       size="small"
                     />
@@ -248,7 +273,11 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                   <TableCell align="center">
                     <Radio
                       checked={estado === "m"}
-                      onChange={() => handleEstadoChange(config.key, "m")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEstadoChange(config.key, "m");
+                      }}
                       value="m"
                       size="small"
                     />
@@ -298,9 +327,16 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                     checked={
                       estadoGeneral.equipamiento_hidraulico.estado === "b"
                     }
-                    onChange={() =>
-                      handleEquipamientoHidraulicoChange(true, "b")
-                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const currentEstado =
+                        estadoGeneral.equipamiento_hidraulico.estado;
+                      handleEquipamientoHidraulicoChange(
+                        true,
+                        currentEstado === "b" ? null : "b"
+                      );
+                    }}
                     value="b"
                     size="small"
                   />
@@ -310,9 +346,16 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                     checked={
                       estadoGeneral.equipamiento_hidraulico.estado === "r"
                     }
-                    onChange={() =>
-                      handleEquipamientoHidraulicoChange(true, "r")
-                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const currentEstado =
+                        estadoGeneral.equipamiento_hidraulico.estado;
+                      handleEquipamientoHidraulicoChange(
+                        true,
+                        currentEstado === "r" ? null : "r"
+                      );
+                    }}
                     value="r"
                     size="small"
                   />
@@ -322,9 +365,16 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                     checked={
                       estadoGeneral.equipamiento_hidraulico.estado === "m"
                     }
-                    onChange={() =>
-                      handleEquipamientoHidraulicoChange(true, "m")
-                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const currentEstado =
+                        estadoGeneral.equipamiento_hidraulico.estado;
+                      handleEquipamientoHidraulicoChange(
+                        true,
+                        currentEstado === "m" ? null : "m"
+                      );
+                    }}
                     value="m"
                     size="small"
                   />
@@ -367,7 +417,15 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                 <TableCell align="center">
                   <Radio
                     checked={estadoGeneral.cupula.estado === "b"}
-                    onChange={() => handleCupulaChange(true, "b")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const currentEstado = estadoGeneral.cupula.estado;
+                      handleCupulaChange(
+                        true,
+                        currentEstado === "b" ? null : "b"
+                      );
+                    }}
                     value="b"
                     size="small"
                   />
@@ -375,7 +433,15 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                 <TableCell align="center">
                   <Radio
                     checked={estadoGeneral.cupula.estado === "r"}
-                    onChange={() => handleCupulaChange(true, "r")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const currentEstado = estadoGeneral.cupula.estado;
+                      handleCupulaChange(
+                        true,
+                        currentEstado === "r" ? null : "r"
+                      );
+                    }}
                     value="r"
                     size="small"
                   />
@@ -383,7 +449,15 @@ export const EstadoGeneral: React.FC<EstadoGeneralProps> = ({
                 <TableCell align="center">
                   <Radio
                     checked={estadoGeneral.cupula.estado === "m"}
-                    onChange={() => handleCupulaChange(true, "m")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const currentEstado = estadoGeneral.cupula.estado;
+                      handleCupulaChange(
+                        true,
+                        currentEstado === "m" ? null : "m"
+                      );
+                    }}
                     value="m"
                     size="small"
                   />

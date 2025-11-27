@@ -52,8 +52,20 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
       label: "MOTOR",
     },
     {
-      key: "bocina" as const,
-      label: "BOCINA",
+      key: "electroventilador" as const,
+      label: "ELECTROVENTILADOR",
+    },
+    {
+      key: "embrague" as const,
+      label: "EMBRAGUE",
+    },
+    {
+      key: "transmision" as const,
+      label: "TRANSMISIÓN",
+    },
+    {
+      key: "direccion" as const,
+      label: "DIRECCIÓN",
     },
     {
       key: "escape" as const,
@@ -62,34 +74,6 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
     {
       key: "frenos" as const,
       label: "FRENOS",
-    },
-    {
-      key: "sapito" as const,
-      label: "SAPITO",
-    },
-    {
-      key: "vidrios" as const,
-      label: "VIDRIOS",
-    },
-    {
-      key: "embrague" as const,
-      label: "EMBRAGUE",
-    },
-    {
-      key: "direccion" as const,
-      label: "DIRECCIÓN",
-    },
-    {
-      key: "cerraduras" as const,
-      label: "CERRADURAS",
-    },
-    {
-      key: "calefaccion" as const,
-      label: "CALEFACCIÓN",
-    },
-    {
-      key: "transmision" as const,
-      label: "TRANSMISIÓN",
     },
     {
       key: "freno_de_mano" as const,
@@ -104,25 +88,42 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
       label: "TREN DELANTERO",
     },
     {
-      key: "electroventilador" as const,
-      label: "ELECTROVENTILADOR",
+      key: "aire_acondicionado" as const,
+      label: "AIRE ACONDICIONADO",
+      special: true, // Puede ser "no posee"
+    },
+    {
+      key: "calefaccion" as const,
+      label: "CALEFACCIÓN",
+    },
+    {
+      key: "tablero_instrumental" as const,
+      label: "TABLERO INSTRUMENTAL",
+    },
+    {
+      key: "cerraduras" as const,
+      label: "CERRADURAS",
+    },
+    {
+      key: "vidrios" as const,
+      label: "LEVANTA VIDRIOS",
     },
     {
       key: "limpia_parabrisas" as const,
       label: "LIMPIA PARABRISAS",
     },
     {
-      key: "aire_acondicionado" as const,
-      label: "AIRE ACONDICIONADO",
-      special: true, // Puede ser "no posee"
+      key: "sapito" as const,
+      label: "SAPITO",
     },
     {
-      key: "tablero_instrumental" as const,
-      label: "TABLERO INSTRUMENTAL",
+      key: "bocina" as const,
+      label: "BOCINA",
     },
   ];
 
   // Helper para actualizar un campo de funcionamiento específico
+  // Permite deseleccionar enviando null si se hace clic en el mismo valor
   const handleFuncionamientoChange = (
     key: keyof FuncionamientoType,
     value: EstadoBRM | EstadoBRM_NP
@@ -135,10 +136,26 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
       return;
     }
     if (!funcionamiento) return;
-    handleChange({
-      ...funcionamiento,
-      [key]: value,
-    });
+
+    const currentValue = funcionamiento[key] as
+      | EstadoBRM
+      | EstadoBRM_NP
+      | null
+      | undefined;
+
+    // Si se hace clic en el mismo valor, deseleccionar (enviar null)
+    if (currentValue === value) {
+      handleChange({
+        ...funcionamiento,
+        [key]: null,
+      });
+    } else {
+      // Si es un valor diferente, actualizar
+      handleChange({
+        ...funcionamiento,
+        [key]: value,
+      });
+    }
   };
 
   // Helper para actualizar bateria_marca
@@ -233,9 +250,11 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
                     >
                       <Radio
                         checked={estado === "b"}
-                        onChange={() =>
-                          handleFuncionamientoChange(config.key, "b")
-                        }
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleFuncionamientoChange(config.key, "b");
+                        }}
                         value="b"
                         size="small"
                       />
@@ -261,29 +280,30 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
                       {isAireAcondicionado ? (
                         <>
                           <Radio
-                            checked={estado === "no posee"}
-                            onChange={() =>
-                              handleFuncionamientoChange(
-                                config.key,
-                                "no posee" as EstadoBRM_NP
-                              )
-                            }
-                            value="no posee"
+                            checked={estado === "m"}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleFuncionamientoChange(config.key, "m");
+                            }}
+                            value="m"
                             size="small"
                           />
                           <Typography
                             variant="caption"
                             sx={{ fontSize: "0.7rem" }}
                           >
-                            No Posee
+                            M - Malo
                           </Typography>
                         </>
                       ) : (
                         <Radio
                           checked={estado === "r"}
-                          onChange={() =>
-                            handleFuncionamientoChange(config.key, "r")
-                          }
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleFuncionamientoChange(config.key, "r");
+                          }}
                           value="r"
                           size="small"
                         />
@@ -299,21 +319,39 @@ export const Funcionamiento: React.FC<FuncionamientoProps> = ({
                         gap: 0.5,
                       }}
                     >
-                      <Radio
-                        checked={estado === "m"}
-                        onChange={() =>
-                          handleFuncionamientoChange(config.key, "m")
-                        }
-                        value="m"
-                        size="small"
-                      />
-                      {isAireAcondicionado && (
-                        <Typography
-                          variant="caption"
-                          sx={{ fontSize: "0.7rem" }}
-                        >
-                          M - Malo
-                        </Typography>
+                      {isAireAcondicionado ? (
+                        <>
+                          <Radio
+                            checked={estado === "no posee"}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleFuncionamientoChange(
+                                config.key,
+                                "no posee" as EstadoBRM_NP
+                              );
+                            }}
+                            value="no posee"
+                            size="small"
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontSize: "0.7rem" }}
+                          >
+                            No Posee
+                          </Typography>
+                        </>
+                      ) : (
+                        <Radio
+                          checked={estado === "m"}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleFuncionamientoChange(config.key, "m");
+                          }}
+                          value="m"
+                          size="small"
+                        />
                       )}
                     </Box>
                   </TableCell>
